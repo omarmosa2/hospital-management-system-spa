@@ -14,8 +14,11 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return Inertia::render('Dashboard', [
+        'status' => session('message'),
+        'error' => session('error')
+    ]);
+})->middleware(['auth'])->name('dashboard');
 
 // Protected routes that require authentication
 Route::middleware('auth')->group(function () {

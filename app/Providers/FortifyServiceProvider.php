@@ -47,6 +47,21 @@ class FortifyServiceProvider extends ServiceProvider
             return inertia('Auth/Login');
         });
 
+        // Check roles after login
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = \App\Models\User::where('email', $request->email)->first();
+
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                // Check if user has any roles
+                if ($user->roles()->count() === 0) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                    'email' => ['Your account requires role assignment. Please contact the administrator.']
+                ]);
+                }
+                return $user;
+            }
+        });
+
         // Custom register view
         Fortify::registerView(function () {
             return inertia('Auth/Register');

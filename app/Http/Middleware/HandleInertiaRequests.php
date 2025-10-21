@@ -31,6 +31,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'csrf_token' => csrf_token(),
             'auth' => [
                 'user' => $request->user() ? [
                     'id' => $request->user()->id,
@@ -47,7 +48,8 @@ class HandleInertiaRequests extends Middleware
                 ] : null
             ],
             'flash' => [
-                'message' => fn () => $request->session()->get('message')
+                'message' => fn () => $request->session()->get('message'),
+                'error' => fn () => $request->session()->get('error')
             ],
         ];
     }

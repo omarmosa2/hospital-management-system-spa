@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -57,7 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get all roles for this user.
      */
-    public function roles()
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles')
             ->withTimestamps()
@@ -69,34 +70,32 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function primaryRole()
     {
-        return $this->roles()->oldest('assigned_at')->first();
+        return $this->roles->first();
     }
 
     /**
      * Check if user has a specific role.
      */
-    public function hasRole(string $role)
+    public function hasRole(string $role): bool
     {
-        return $this->roles()->where('name', $role)->exists();
+        return $this->roles->contains('name', $role);
     }
 
     /**
      * Check if user has any of the given roles.
      */
-    public function hasAnyRole(array|string $roles)
+    public function hasAnyRole(string $roles): bool
     {
-        if (is_string($roles)) {
-            $roles = array_map('trim', explode('|', $roles));
-        }
-        return $this->roles()->whereIn('name', $roles)->exists();
+        $roleArray = array_map('trim', explode('|', $roles));
+        return $this->roles->pluck('name')->intersect($roleArray)->isNotEmpty();
     }
 
     /**
      * Check if user has all of the given roles.
      */
-    public function hasAllRoles(array $roles)
+    public function hasAllRoles(array $roles): bool
     {
-        return $this->roles()->whereIn('name', $roles)->count() === count($roles);
+        return $this->roles->pluck('name')->intersect($roles)->count() === count($roles);
     }
 
     /**
