@@ -256,19 +256,195 @@ export default function ReportsIndex({ reports, auth }) {
                     </TabsContent>
 
                     <TabsContent value="financial" className="space-y-4">
+                        {/* التقارير المالية التفصيلية */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* إحصائيات مالية عامة */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <DollarSign className="mr-2 h-5 w-5 text-green-600" />
+                                        التقرير المالي الشامل
+                                    </CardTitle>
+                                    <CardDescription>
+                                        إجمالي الإيرادات والمصروفات والأرباح
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-green-50 p-3 rounded-lg">
+                                            <div className="text-sm text-green-600">إجمالي الإيرادات</div>
+                                            <div className="text-xl font-bold text-green-700">45,678 ريال</div>
+                                        </div>
+                                        <div className="bg-red-50 p-3 rounded-lg">
+                                            <div className="text-sm text-red-600">إجمالي المصروفات</div>
+                                            <div className="text-xl font-bold text-red-700">12,345 ريال</div>
+                                        </div>
+                                        <div className="bg-blue-50 p-3 rounded-lg">
+                                            <div className="text-sm text-blue-600">صافي أجور المركز</div>
+                                            <div className="text-xl font-bold text-blue-700">28,901 ريال</div>
+                                        </div>
+                                        <div className="bg-purple-50 p-3 rounded-lg">
+                                            <div className="text-sm text-purple-600">إجمالي أجور الأطباء</div>
+                                            <div className="text-xl font-bold text-purple-700">16,777 ريال</div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* تقرير الأجور حسب الطبيب */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Users className="mr-2 h-5 w-5 text-blue-600" />
+                                        أجور الأطباء
+                                    </CardTitle>
+                                    <CardDescription>
+                                        تفصيل أجور كل طبيب حسب النشاط
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <div>
+                                                <div className="font-medium">د. أحمد محمد</div>
+                                                <div className="text-sm text-gray-500">الباطنية - 15 مريض</div>
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-semibold">5,200 ريال</div>
+                                                <div className="text-sm text-green-600">من المعاينات</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <div>
+                                                <div className="font-medium">د. فاطمة علي</div>
+                                                <div className="text-sm text-gray-500">النساء والتوليد - 12 مريض</div>
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-semibold">4,800 ريال</div>
+                                                <div className="text-sm text-green-600">من المعاينات</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <div>
+                                                <div className="font-medium">د. محمد سعد</div>
+                                                <div className="text-sm text-gray-500">العظام - 8 مرضى</div>
+                                            </div>
+                                            <div className="text-left">
+                                                <div className="font-semibold">3,200 ريال</div>
+                                                <div className="text-sm text-green-600">من المعاينات</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded font-semibold">
+                                            <div>الإجمالي</div>
+                                            <div>13,200 ريال</div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* تفاصيل الحسومات والإجراءات */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Financial Reports</CardTitle>
+                                <CardTitle className="flex items-center">
+                                    <Calculator className="mr-2 h-5 w-5 text-orange-600" />
+                                    تفاصيل الحسومات والإجراءات
+                                </CardTitle>
                                 <CardDescription>
-                                    Revenue, expenses, and financial projections
+                                    تحليل الحسومات المطبقة والإجراءات الإضافية
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                                    <div className="text-center">
-                                        <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500">Financial trends chart</p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <h4 className="font-semibold mb-3">الحسومات المطبقة</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">خصم المركز (نبض):</span>
+                                                <span className="font-medium">2,345 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">خصم الأطباء:</span>
+                                                <span className="font-medium">1,890 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between border-t pt-2">
+                                                <span className="font-medium">إجمالي الحسومات:</span>
+                                                <span className="font-bold">4,235 ريال</span>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    <div>
+                                        <h4 className="font-semibold mb-3">الإجراءات الإضافية</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">تحاليل طبية:</span>
+                                                <span className="font-medium">1,200 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">أشعة:</span>
+                                                <span className="font-medium">800 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">إجراءات أخرى:</span>
+                                                <span className="font-medium">600 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between border-t pt-2">
+                                                <span className="font-medium">إجمالي الإجراءات:</span>
+                                                <span className="font-bold">2,600 ريال</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-semibold mb-3">التوزيع النهائي</h4>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">صافي أجور المركز:</span>
+                                                <span className="font-medium text-blue-600">31,501 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-sm">صافي أجور الأطباء:</span>
+                                                <span className="font-medium text-green-600">16,777 ريال</span>
+                                            </div>
+                                            <div className="flex justify-between border-t pt-2 text-lg">
+                                                <span className="font-bold">صافي الإيرادات:</span>
+                                                <span className="font-bold text-purple-700">48,278 ريال</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* تقارير دورية */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <Calendar className="mr-2 h-5 w-5 text-indigo-600" />
+                                    التقارير الدورية
+                                </CardTitle>
+                                <CardDescription>
+                                    إمكانية إنشاء تقارير يومية، أسبوعية، أو شهرية
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <Button variant="outline" className="flex flex-col items-center p-6 h-auto">
+                                        <Calendar className="h-8 w-8 mb-2 text-blue-600" />
+                                        <span className="font-medium">تقرير يومي</span>
+                                        <span className="text-sm text-gray-500">إحصائيات اليوم الحالي</span>
+                                    </Button>
+                                    <Button variant="outline" className="flex flex-col items-center p-6 h-auto">
+                                        <Calendar className="h-8 w-8 mb-2 text-green-600" />
+                                        <span className="font-medium">تقرير أسبوعي</span>
+                                        <span className="text-sm text-gray-500">إحصائيات الأسبوع الحالي</span>
+                                    </Button>
+                                    <Button variant="outline" className="flex flex-col items-center p-6 h-auto">
+                                        <Calendar className="h-8 w-8 mb-2 text-purple-600" />
+                                        <span className="font-medium">تقرير شهري</span>
+                                        <span className="text-sm text-gray-500">إحصائيات الشهر الحالي</span>
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>

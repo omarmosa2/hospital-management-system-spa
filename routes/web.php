@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -72,10 +74,47 @@ Route::middleware(['auth'])->group(function () {
     })->name('appointments.index');
 });
 
+// Salary Management Routes
+Route::middleware(['auth'])->group(function () {
+    Route::resource('salaries', SalaryController::class);
+    Route::patch('/salaries/{salary}/mark-paid', [SalaryController::class, 'markAsPaid'])->name('salaries.mark-paid');
+    Route::get('/salaries-stats', [SalaryController::class, 'getStats'])->name('salaries.stats');
+});
+
+// Reports and Analytics Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+});
+
+// Payments Management Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/payments', function () {
+        $doctors = \App\Models\Doctor::with('user')->get();
+        $appointments = \App\Models\Appointment::with(['patient.user', 'doctor.user'])
+            ->whereMonth('scheduled_datetime', now()->month)
+            ->get();
+
+        $stats = [
+            'total_revenue' => $appointments->sum('amount_received'),
+            'total_center_fee' => $appointments->sum('total_center_fee'),
+            'total_doctor_fee' => $appointments->sum('total_doctor_fee'),
+            'total_appointments' => $appointments->count(),
+        ];
+
+        return Inertia::render('Payments/Index', [
+            'doctors' => $doctors,
+            'appointments' => $appointments,
+            'stats' => $stats,
+        ]);
+    })->name('payments.index');
+});
+
 // API Routes for AJAX requests
 Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::get('/patients/stats', [PatientController::class, 'getStats'])->name('api.patients.stats');
     Route::get('/appointments/stats', [AppointmentController::class, 'getStats'])->name('api.appointments.stats');
+    Route::get('/salaries/stats', [SalaryController::class, 'getStats'])->name('api.salaries.stats');
 });
 
 require __DIR__.'/auth.php';

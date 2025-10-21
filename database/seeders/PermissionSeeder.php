@@ -80,6 +80,20 @@ class PermissionSeeder extends Seeder
             ['name' => 'generate-reports', 'display_name' => 'Generate Reports', 'module' => 'reports', 'description' => 'Can generate reports'],
             ['name' => 'export-reports', 'display_name' => 'Export Reports', 'module' => 'reports', 'description' => 'Can export reports'],
 
+            // Salary Management
+            ['name' => 'view-salaries', 'display_name' => 'View Salaries', 'module' => 'salaries', 'description' => 'Can view salary records'],
+            ['name' => 'create-salaries', 'display_name' => 'Create Salaries', 'module' => 'salaries', 'description' => 'Can create salary records'],
+            ['name' => 'edit-salaries', 'display_name' => 'Edit Salaries', 'module' => 'salaries', 'description' => 'Can edit salary records'],
+            ['name' => 'delete-salaries', 'display_name' => 'Delete Salaries', 'module' => 'salaries', 'description' => 'Can delete salary records'],
+            ['name' => 'pay-salaries', 'display_name' => 'Pay Salaries', 'module' => 'salaries', 'description' => 'Can process salary payments'],
+            ['name' => 'view-salary-reports', 'display_name' => 'View Salary Reports', 'module' => 'salaries', 'description' => 'Can view salary reports and analytics'],
+
+            // Financial Management
+            ['name' => 'view-financial-reports', 'display_name' => 'View Financial Reports', 'module' => 'financial', 'description' => 'Can view financial reports'],
+            ['name' => 'manage-expenses', 'display_name' => 'Manage Expenses', 'module' => 'financial', 'description' => 'Can manage clinic expenses'],
+            ['name' => 'view-revenue-analytics', 'display_name' => 'View Revenue Analytics', 'module' => 'financial', 'description' => 'Can view revenue and income analytics'],
+            ['name' => 'manage-budgets', 'display_name' => 'Manage Budgets', 'module' => 'financial', 'description' => 'Can create and manage clinic budgets'],
+
             // System Administration
             ['name' => 'view-system-settings', 'display_name' => 'View System Settings', 'module' => 'system', 'description' => 'Can view system settings'],
             ['name' => 'edit-system-settings', 'display_name' => 'Edit System Settings', 'module' => 'system', 'description' => 'Can edit system settings'],
@@ -138,7 +152,9 @@ class PermissionSeeder extends Seeder
             $receptionistPermissions = [
                 'view-patients', 'create-patients', 'edit-patients',
                 'view-appointments', 'create-appointments', 'edit-appointments',
-                'view-doctors', 'view-clinics', 'view-bills', 'create-bills'
+                'view-doctors', 'view-clinics', 'view-bills', 'create-bills',
+                'view-salaries', 'view-salary-reports', 'view-financial-reports',
+                'view-revenue-analytics'
             ];
             $receptionistRole->givePermissions($receptionistPermissions);
         }

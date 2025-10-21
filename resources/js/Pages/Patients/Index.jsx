@@ -7,7 +7,8 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import {
     Users, Search, Plus, Filter, MoreHorizontal,
-    Phone, Mail, Calendar, MapPin, Eye
+    Phone, Mail, Calendar, MapPin, Eye, DollarSign,
+    TrendingUp, Activity
 } from 'lucide-react';
 
 export default function PatientsIndex({ patients, auth }) {
@@ -158,12 +159,114 @@ export default function PatientsIndex({ patients, auth }) {
                                 </div>
                                 <div className="flex items-center text-sm text-gray-600">
                                     <Calendar className="h-4 w-4 mr-2" />
-                                    DOB: {new Date(patient.date_of_birth).toLocaleDateString()}
+                                    تاريخ الميلاد: {new Date(patient.date_of_birth).toLocaleDateString('ar-SA')}
                                 </div>
                                 <div className="flex items-center text-sm text-gray-600">
                                     <MapPin className="h-4 w-4 mr-2" />
-                                    {patient.blood_type || 'Blood type not specified'}
+                                    فصيلة الدم: {patient.blood_type || 'غير محدد'}
                                 </div>
+
+                                {/* البيانات المالية والطبية */}
+                                {patient.appointments && patient.appointments.length > 0 && (
+                                    <div className="border-t pt-3 mt-3">
+                                        <div className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                            <Activity className="h-4 w-4 mr-2" />
+                                            آخر زيارة: {patient.appointments[0]?.scheduled_datetime ?
+                                                new Date(patient.appointments[0].scheduled_datetime).toLocaleDateString('ar-SA') :
+                                                'غير محدد'
+                                            }
+                                        </div>
+
+                                        {patient.appointments[0] && (
+                                            <div className="space-y-2 text-xs">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">نوع الزيارة:</span>
+                                                    <span className="font-medium">
+                                                        {patient.appointments[0].visit_type === 'consultation' ? 'معاينة' : 'مراجعة'}
+                                                    </span>
+                                                </div>
+
+                                                {patient.appointments[0].amount_received > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">المبلغ المستلم:</span>
+                                                        <span className="font-medium">
+                                                            {new Intl.NumberFormat('ar-SA', {
+                                                                style: 'currency',
+                                                                currency: 'SAR'
+                                                            }).format(patient.appointments[0].amount_received)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {patient.appointments[0].total_doctor_fee > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">أجور الطبيب:</span>
+                                                        <span className="font-medium text-green-600">
+                                                            {new Intl.NumberFormat('ar-SA', {
+                                                                style: 'currency',
+                                                                currency: 'SAR'
+                                                            }).format(patient.appointments[0].total_doctor_fee)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {patient.appointments[0].total_center_fee > 0 && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">أجور المركز:</span>
+                                                        <span className="font-medium text-blue-600">
+                                                            {new Intl.NumberFormat('ar-SA', {
+                                                                style: 'currency',
+                                                                currency: 'SAR'
+                                                            }).format(patient.appointments[0].total_center_fee)}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">حالة الدفع:</span>
+                                                    <span>
+                                                        {patient.appointments[0].payment_status === 'paid' && (
+                                                            <Badge className="bg-green-100 text-green-800 text-xs">مدفوع بالكامل</Badge>
+                                                        )}
+                                                        {patient.appointments[0].payment_status === 'partial' && (
+                                                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">مدفوع جزئيًا</Badge>
+                                                        )}
+                                                        {patient.appointments[0].payment_status === 'unpaid' && (
+                                                            <Badge className="bg-red-100 text-red-800 text-xs">غير مدفوع</Badge>
+                                                        )}
+                                                    </span>
+                                                </div>
+
+                                                {patient.appointments[0].doctor && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">الطبيب:</span>
+                                                        <span className="font-medium">
+                                                            {patient.appointments[0].doctor.user.name}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {patient.appointments[0].additional_procedures && (
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600">إجراءات إضافية:</span>
+                                                        <span className="font-medium">
+                                                            {patient.appointments[0].additional_procedures}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between pt-2 border-t">
+                                            <div className="text-xs text-gray-500">
+                                                إجمالي الزيارات: {patient.appointments.length}
+                                            </div>
+                                            <Button size="sm" variant="outline">
+                                                حجز موعد جديد
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between pt-3 border-t">
                                     <div className="flex space-x-2">

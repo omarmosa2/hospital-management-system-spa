@@ -18,6 +18,7 @@ class Doctor extends Model
         'bio',
         'years_of_experience',
         'consultation_fee',
+        'procedure_fee_percentage',
         'max_patients_per_day',
         'office_phone',
         'office_room',
@@ -33,6 +34,7 @@ class Doctor extends Model
             'available_days' => 'array',
             'is_available' => 'boolean',
             'consultation_fee' => 'decimal:2',
+            'procedure_fee_percentage' => 'decimal:2',
             'start_time' => 'datetime:H:i',
             'end_time' => 'datetime:H:i',
         ];
@@ -150,5 +152,44 @@ class Doctor extends Model
         // This would implement the logic to calculate available time slots
         // based on existing appointments and doctor's schedule
         return [];
+    }
+
+    /**
+     * حساب أجور الطبيب من الإجراءات الإضافية
+     */
+    public function calculateProcedureFee($procedureAmount)
+    {
+        if ($this->procedure_fee_percentage <= 0) {
+            return 0;
+        }
+
+        return ($procedureAmount * $this->procedure_fee_percentage) / 100;
+    }
+
+    /**
+     * حساب إجمالي أجور الطبيب من المعاينة والإجراءات
+     */
+    public function calculateTotalFee($consultationAmount, $proceduresAmount = 0)
+    {
+        $consultationFee = $consultationAmount;
+        $procedureFee = $this->calculateProcedureFee($proceduresAmount);
+
+        return $consultationFee + $procedureFee;
+    }
+
+    /**
+     * الحصول على أجرة المعاينة الأساسية
+     */
+    public function getConsultationFee()
+    {
+        return $this->consultation_fee ?? 0;
+    }
+
+    /**
+     * حساب نسبة أجور الإجراءات من المبلغ الإجمالي
+     */
+    public function getProcedureFeePercentage()
+    {
+        return $this->procedure_fee_percentage ?? 0;
     }
 }

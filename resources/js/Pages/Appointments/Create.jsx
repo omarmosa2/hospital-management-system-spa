@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/Components/ui/popover
 import { Badge } from '@/Components/ui/badge';
 import {
     Calendar as CalendarIcon, Clock, Save, ArrowLeft,
-    User, Stethoscope, MapPin, FileText
+    User, Stethoscope, MapPin, FileText, DollarSign, Calculator
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -24,10 +24,22 @@ export default function CreateAppointment() {
         clinic_id: '',
         scheduled_datetime: '',
         appointment_type: 'consultation',
+        visit_type: 'consultation',
         duration_minutes: 30,
         reason_for_visit: '',
         symptoms: '',
         notes: '',
+        // الحقول المالية الجديدة
+        base_consultation_fee: 0,
+        amount_received: 0,
+        center_discount: 0,
+        doctor_discount: 0,
+        additional_procedures_amount: 0,
+        additional_procedures: '',
+        is_first_visit_free: false,
+        advance_payment: 0,
+        remaining_amount: 0,
+        payment_status: 'unpaid',
     });
 
     const [selectedDate, setSelectedDate] = useState(null);
@@ -40,6 +52,23 @@ export default function CreateAppointment() {
             fetchAvailableSlots(data.doctor_id, selectedDate);
         }
     }, [data.doctor_id, selectedDate]);
+
+    useEffect(() => {
+        // تحديث visit_type عند تغيير appointment_type
+        if (data.appointment_type === 'follow_up') {
+            setData('visit_type', 'follow_up');
+        } else {
+            setData('visit_type', 'consultation');
+        }
+
+        // حساب الأجور التلقائية عند اختيار الطبيب
+        if (data.doctor_id && doctors) {
+            const selectedDoctor = doctors.find(doctor => doctor.id == data.doctor_id);
+            if (selectedDoctor && selectedDoctor.consultation_fee) {
+                setData('base_consultation_fee', selectedDoctor.consultation_fee);
+            }
+        }
+    }, [data.doctor_id, data.appointment_type, doctors]);
 
     const fetchAvailableSlots = async (doctorId, date) => {
         // This would make an API call to get available slots
@@ -79,12 +108,17 @@ export default function CreateAppointment() {
     };
 
     const appointmentTypes = [
-        { value: 'consultation', label: 'General Consultation' },
-        { value: 'follow_up', label: 'Follow-up Visit' },
-        { value: 'emergency', label: 'Emergency Visit' },
-        { value: 'routine_check', label: 'Routine Check-up' },
-        { value: 'vaccination', label: 'Vaccination' },
-        { value: 'other', label: 'Other' }
+        { value: 'consultation', label: 'معاينة عامة' },
+        { value: 'follow_up', label: 'مراجعة' },
+        { value: 'emergency', label: 'طوارئ' },
+        { value: 'routine_check', label: 'فحص دوري' },
+        { value: 'vaccination', label: 'تطعيم' },
+        { value: 'other', label: 'أخرى' }
+    ];
+
+    const visitTypes = [
+        { value: 'consultation', label: 'معاينة' },
+        { value: 'follow_up', label: 'مراجعة' }
     ];
 
     return (
@@ -331,6 +365,223 @@ export default function CreateAppointment() {
                                         placeholder="Any additional information or special requirements..."
                                         rows={2}
                                     />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Financial Information */}
+                        <Card className="mb-6">
+                            <CardHeader>
+                                <CardTitle className="flex items-center">
+                                    <DollarSign className="mr-2 h-5 w-5" />
+                                    المعلومات المالية
+                                </CardTitle>
+                                <CardDescription>
+                                    تفاصيل الأجور والخصومات والمبالغ المالية
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {/* نوع الزيارة والزيارة الأولى مجانية */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="visit_type">نوع الزيارة *</Label>
+                                        <Select value={data.visit_type} onValueChange={(value) => setData('visit_type', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="اختر نوع الزيارة" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="consultation">معاينة</SelectItem>
+                                                <SelectItem value="follow_up">مراجعة</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.visit_type && (
+                                            <p className="text-sm text-red-600 mt-1">{errors.visit_type}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="is_first_visit_free"
+                                            checked={data.is_first_visit_free}
+                                            onChange={(e) => setData('is_first_visit_free', e.target.checked)}
+                                            className="rounded border-gray-300"
+                                        />
+                                        <Label htmlFor="is_first_visit_free">المراجعة الأولى مجانية</Label>
+                                    </div>
+                                </div>
+
+                                {/* أجرة الكشفية والمبالغ الأساسية */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <Label htmlFor="base_consultation_fee">أجرة الكشفية *</Label>
+                                        <Input
+                                            type="number"
+                                            id="base_consultation_fee"
+                                            value={data.base_consultation_fee}
+                                            onChange={(e) => setData('base_consultation_fee', parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                        {errors.base_consultation_fee && (
+                                            <p className="text-sm text-red-600 mt-1">{errors.base_consultation_fee}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="amount_received">المبلغ المستلم *</Label>
+                                        <Input
+                                            type="number"
+                                            id="amount_received"
+                                            value={data.amount_received}
+                                            onChange={(e) => {
+                                                const amount = parseFloat(e.target.value) || 0;
+                                                setData('amount_received', amount);
+                                                setData('remaining_amount', amount - data.advance_payment);
+                                            }}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                        {errors.amount_received && (
+                                            <p className="text-sm text-red-600 mt-1">{errors.amount_received}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="payment_status">حالة الدفع</Label>
+                                        <Select value={data.payment_status} onValueChange={(value) => setData('payment_status', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="unpaid">غير مدفوع</SelectItem>
+                                                <SelectItem value="partial">مدفوع جزئيًا</SelectItem>
+                                                <SelectItem value="paid">مدفوع بالكامل</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                {/* الخصومات */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="center_discount">خصم المركز (نبض)</Label>
+                                        <Input
+                                            type="number"
+                                            id="center_discount"
+                                            value={data.center_discount}
+                                            onChange={(e) => setData('center_discount', parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="doctor_discount">خصم الطبيب</Label>
+                                        <Input
+                                            type="number"
+                                            id="doctor_discount"
+                                            value={data.doctor_discount}
+                                            onChange={(e) => setData('doctor_discount', parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* الإجراءات الإضافية */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="additional_procedures">الإجراءات الإضافية</Label>
+                                        <Textarea
+                                            id="additional_procedures"
+                                            value={data.additional_procedures}
+                                            onChange={(e) => setData('additional_procedures', e.target.value)}
+                                            placeholder="وصف الإجراءات الإضافية المنفذة..."
+                                            rows={2}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="additional_procedures_amount">أجور الإجراءات الإضافية</Label>
+                                        <Input
+                                            type="number"
+                                            id="additional_procedures_amount"
+                                            value={data.additional_procedures_amount}
+                                            onChange={(e) => setData('additional_procedures_amount', parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* الدفعة المقدمة والمبلغ المتبقي */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="advance_payment">الدفعة المقدمة</Label>
+                                        <Input
+                                            type="number"
+                                            id="advance_payment"
+                                            value={data.advance_payment}
+                                            onChange={(e) => {
+                                                const advance = parseFloat(e.target.value) || 0;
+                                                setData('advance_payment', advance);
+                                                setData('remaining_amount', data.amount_received - advance);
+                                            }}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="remaining_amount">المبلغ المتبقي</Label>
+                                        <Input
+                                            type="number"
+                                            id="remaining_amount"
+                                            value={data.remaining_amount}
+                                            onChange={(e) => setData('remaining_amount', parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            min="0"
+                                            step="0.01"
+                                            className="bg-gray-50"
+                                            readOnly
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* ملخص الحسابات المالية */}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <h4 className="font-semibold mb-2 flex items-center">
+                                        <Calculator className="mr-2 h-4 w-4" />
+                                        ملخص الحسابات المالية
+                                    </h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-gray-600">إجمالي المعاينة:</span>
+                                            <div className="font-semibold">
+                                                {data.base_consultation_fee + data.additional_procedures_amount} ريال
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">إجمالي الخصومات:</span>
+                                            <div className="font-semibold">
+                                                {data.center_discount + data.doctor_discount} ريال
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">صافي المبلغ:</span>
+                                            <div className="font-semibold">
+                                                {data.base_consultation_fee + data.additional_procedures_amount - data.center_discount - data.doctor_discount} ريال
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-600">حالة الدفع:</span>
+                                            <Badge variant={data.payment_status === 'paid' ? 'default' : data.payment_status === 'partial' ? 'secondary' : 'destructive'}>
+                                                {data.payment_status === 'paid' ? 'مدفوع بالكامل' :
+                                                 data.payment_status === 'partial' ? 'مدفوع جزئيًا' : 'غير مدفوع'}
+                                            </Badge>
+                                        </div>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
