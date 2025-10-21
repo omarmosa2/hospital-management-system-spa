@@ -10,7 +10,7 @@ import {
     Phone, Mail, Award, Calendar, Users, Edit, Trash2, Eye
 } from 'lucide-react';
 
-export default function DoctorsIndex({ doctors, can }) {
+export default function DoctorsIndex({ doctors, can, auth }) {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Ensure doctors is always an array
@@ -45,7 +45,7 @@ export default function DoctorsIndex({ doctors, can }) {
                             إدارة الأطباء
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
-                            إدارة جميع الأطباء والتخصصات الطبية
+                            إدارة جميع الأطباء والتخصصات الطبية - تحكم كامل
                         </p>
                     </div>
                     {can.create && (
@@ -70,7 +70,7 @@ export default function DoctorsIndex({ doctors, can }) {
                                     جميع الأطباء
                                 </CardTitle>
                                 <CardDescription>
-                                    {filteredDoctors.length} طبيب مسجل في النظام
+                                    {filteredDoctors.length} طبيب مسجل في النظام - تحكم كامل
                                 </CardDescription>
                             </div>
                         </div>

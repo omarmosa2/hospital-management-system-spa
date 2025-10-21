@@ -21,11 +21,29 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $receptionistRole = Role::firstOrCreate(
+            ['name' => 'receptionist'],
+            [
+                'display_name' => 'Receptionist',
+                'description' => 'Front desk receptionist',
+                'is_active' => true
+            ]
+        );
+
         $doctorRole = Role::firstOrCreate(
             ['name' => 'doctor'],
             [
                 'display_name' => 'Doctor',
                 'description' => 'Medical professional',
+                'is_active' => true
+            ]
+        );
+
+        $nurseRole = Role::firstOrCreate(
+            ['name' => 'nurse'],
+            [
+                'display_name' => 'Nurse',
+                'description' => 'Medical nurse',
                 'is_active' => true
             ]
         );
@@ -50,6 +68,17 @@ class DatabaseSeeder extends Seeder
         );
         $admin->roles()->sync([$adminRole->id]);
 
+        // Create or update receptionist user
+        $receptionist = User::updateOrCreate(
+            ['email' => 'reception@hospital.com'],
+            [
+                'name' => 'Sarah Receptionist',
+                'password' => Hash::make('ReceptionPass123!'),
+                'email_verified_at' => now()
+            ]
+        );
+        $receptionist->roles()->sync([$receptionistRole->id]);
+
         // Create or update doctor user
         $doctor = User::updateOrCreate(
             ['email' => 'doctor@hospital.com'],
@@ -71,5 +100,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $patient->roles()->sync([$patientRole->id]);
+
+        // Setup standard permissions
+        User::setupStandardPermissions();
     }
 }

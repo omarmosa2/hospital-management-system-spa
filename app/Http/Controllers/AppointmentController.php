@@ -131,10 +131,18 @@ class AppointmentController extends Controller
             'clinic_id' => 'nullable|exists:clinics,id',
             'scheduled_datetime' => 'required|date|after:now',
             'appointment_type' => 'required|in:consultation,follow_up,emergency,routine_check,vaccination,other',
+            'visit_type' => 'required|in:consultation,follow_up',
             'duration_minutes' => 'required|integer|min:15|max:480',
             'reason_for_visit' => 'required|string|max:1000',
             'symptoms' => 'nullable|string|max:1000',
             'notes' => 'nullable|string|max:1000',
+            'base_consultation_fee' => 'required|numeric|min:0',
+            'amount_received' => 'required|numeric|min:0',
+            'center_discount' => 'nullable|numeric|min:0',
+            'doctor_discount' => 'nullable|numeric|min:0',
+            'additional_procedures_amount' => 'nullable|numeric|min:0',
+            'additional_procedures' => 'nullable|string',
+            'is_first_visit_free' => 'boolean',
         ]);
 
         // Check if doctor is available at the requested time
@@ -164,6 +172,9 @@ class AppointmentController extends Controller
             'scheduled_by' => Auth::id(),
             'end_datetime' => date('Y-m-d H:i:s', strtotime($validated['scheduled_datetime'] . ' +' . $validated['duration_minutes'] . ' minutes')),
         ]));
+
+        // Calculate financial fields
+        $appointment->updateFinancialCalculations();
 
         return redirect()->route('appointments.show', $appointment)->with('success', 'Appointment scheduled successfully');
     }

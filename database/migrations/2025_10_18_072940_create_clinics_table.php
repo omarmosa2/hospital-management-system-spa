@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('clinics', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('specialty')->nullable(); // Medical specialty
             $table->text('description')->nullable();
             $table->string('location')->nullable(); // Room/Floor number
             $table->string('phone')->nullable();
@@ -36,6 +37,7 @@ return new class extends Migration
 
             // Indexes for performance
             $table->index(['is_active', 'name']);
+            $table->index(['specialty']);
         });
     }
 

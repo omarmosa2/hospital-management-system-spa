@@ -23,51 +23,41 @@ class RoleMiddleware
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        $user->load('roles');
-
-        // If user is admin, allow all access
+        
+        // Admin always has access
         if ($user->roles()->where('name', 'admin')->exists()) {
             return $next($request);
         }
 
-        // If no specific roles required, just check if user has any role
+        // If no roles specified, allow access if user has any role
         if (empty($roles)) {
-            // Allow access if user has any role
             if ($user->roles()->exists()) {
                 return $next($request);
             }
-            // Redirect to dashboard with message if no roles
-            return redirect()->route('dashboard')->with('message', 'Please wait for role assignment.');
+            return redirect()->route('dashboard')->with('error', 'Role assignment required.');
         }
 
-        // For specific role requirements
+        // Check for specific role requirements
         $requiredRoles = array_map('trim', explode('|', $roles));
         
-        // Check if user has any of the required roles
-        if ($user->roles()->whereIn('name', $requiredRoles)->exists()) {
+        // Check if user has any of the required roles using a single query
+        $hasRole = $user->roles()
+            ->whereIn('name', $requiredRoles)
+            ->exists();
+
+        if ($hasRole) {
             return $next($request);
         }
 
-        // User doesn't have required roles
-        if ($request->wantsJson()) {
-            return response()->json(['error' => 'Insufficient permissions'], 403);
-        }
-
-        return back()->with('error', 'You do not have permission to access this area.');
-    }
-
-    /**
-     * Handle unauthorized access attempt
-     */
-    private function unauthorized(Request $request, string $message): Response
-    {
+        // If using API
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
-                'message' => $message,
-                'status' => 'error'
+                'message' => 'Insufficient permissions',
+                'required_roles' => $requiredRoles
             ], 403);
         }
 
-        return redirect()->route('dashboard')->with('error', $message);
+        // For web requests
+        return back()->with('error', 'You do not have permission to access this area.');
     }
 }

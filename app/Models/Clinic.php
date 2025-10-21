@@ -4,13 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Clinic extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'name',
+        'specialty',
         'description',
         'location',
         'phone',
@@ -101,6 +104,31 @@ class Clinic extends Model
 
         $days = implode(', ', $this->working_days);
         return "{$days}: {$this->start_time->format('H:i')} - {$this->end_time->format('H:i')}";
+    }
+
+    /**
+     * Get the options for activity logging.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'name',
+                'specialty',
+                'description',
+                'location',
+                'phone',
+                'email',
+                'start_time',
+                'end_time',
+                'working_days',
+                'max_patients_per_day',
+                'consultation_duration_minutes',
+                'is_active',
+                'head_doctor_id',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     /**

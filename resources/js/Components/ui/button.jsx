@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Button({ className = '', variant = 'default', size = 'default', ...props }) {
+export function Button({ className = '', variant = 'default', size = 'default', asChild = false, ...props }) {
     const variants = {
         default: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600',
         destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-600',
@@ -16,6 +16,16 @@ export function Button({ className = '', variant = 'default', size = 'default', 
         lg: 'h-11 rounded-md px-8',
         icon: 'h-10 w-10',
     };
+
+    // If asChild is true, render the child element instead of button
+    if (asChild && React.isValidElement(props.children)) {
+        const child = React.Children.only(props.children);
+        return React.cloneElement(child, {
+            className: `inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className} ${child.props.className || ''}`,
+            ...props,
+            children: child.props.children
+        });
+    }
 
     return (
         <button

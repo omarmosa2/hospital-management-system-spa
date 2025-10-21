@@ -45,7 +45,7 @@ export default function GuestLayout({ children }) {
                     {/* Footer */}
                     <div className="text-center mt-8">
                         <p className="text-sm text-gray-500">
-                            © 2024 HospitalMS. Built with ❤️ for healthcare professionals.
+                            © 2026 HospitalMS. Built with ❤️ for healthcare professionals.
                         </p>
                     </div>
                 </div>

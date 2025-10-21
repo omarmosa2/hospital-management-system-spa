@@ -34,6 +34,9 @@ class DoctorController extends Controller
                 'create' => Auth::user()->hasPermission('create-doctors'),
                 'edit' => Auth::user()->hasPermission('edit-doctors'),
                 'delete' => Auth::user()->hasPermission('delete-doctors'),
+            ],
+            'auth' => [
+                'user' => Auth::user()
             ]
         ]);
     }

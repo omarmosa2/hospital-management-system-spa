@@ -278,4 +278,111 @@ class SalaryController extends Controller
 
         return response()->json($stats);
     }
+    /**
+     * Show doctor's own salary information
+     */
+    public function showMySalary()
+    {
+        $user = Auth::user();
+
+        if (!$user->isDoctor()) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $doctor = $user->doctor;
+        if (!$doctor) {
+            abort(403, 'Doctor profile not found.');
+        }
+
+        $currentMonth = now()->format('Y-m');
+        $salaries = Salary::where('doctor_id', $doctor->id)
+            ->where('salary_period', 'like', $currentMonth . '%')
+            ->orderBy('payment_date', 'desc')
+            ->get();
+
+        $stats = [
+            'total_earned_this_month' => $salaries->sum('total_salary'),
+            'paid_salaries' => $salaries->where('payment_status', 'paid')->count(),
+            'pending_salaries' => $salaries->where('payment_status', 'pending')->count(),
+        ];
+
+        return Inertia::render('Salaries/MySalary', [
+            'salaries' => $salaries,
+            'stats' => $stats,
+            'doctor' => $doctor->load('user', 'clinic')
+        ]);
+    }
+
+    /**
+     * Display payments management page
+     */
+    public function payments()
+    {
+        // Check if user has permission to view payments
+        if (!Auth::user()->hasPermission('view-payments')) {
+            abort(403, 'Unauthorized access to payments management.');
+        }
+
+        $doctors = \App\Models\Doctor::with('user')->get();
+        $appointments = \App\Models\Appointment::with(['patient.user', 'doctor.user'])
+            ->whereMonth('scheduled_datetime', now()->month)
+            ->where('status', 'completed')
+            ->get();
+
+        $stats = [
+            'total_revenue' => $appointments->sum('amount_received'),
+            'total_center_fee' => $appointments->sum('total_center_fee'),
+            'total_doctor_fee' => $appointments->sum('total_doctor_fee'),
+            'total_appointments' => $appointments->count(),
+            'net_profit' => $appointments->sum('total_center_fee') - $appointments->sum('total_doctor_fee'),
+        ];
+
+        return Inertia::render('Payments/Index', [
+            'doctors' => $doctors,
+            'appointments' => $appointments,
+            'stats' => $stats,
+            'can' => [
+                'export' => Auth::user()->hasPermission('export-reports'),
+            ]
+        ]);
+    }
+
+    /**
+     * Export payments data
+     */
+    public function exportPayments(Request $request)
+    {
+        if (!Auth::user()->hasPermission('export-reports')) {
+            abort(403, 'Unauthorized to export payments.');
+        }
+
+        // This would integrate with Laravel Excel package
+        // For now, return JSON response
+        $appointments = \App\Models\Appointment::with(['patient.user', 'doctor.user'])
+            ->where('status', 'completed')
+            ->when($request->month, function ($q) use ($request) {
+                $q->whereMonth('scheduled_datetime', $request->month);
+            })
+            ->when($request->year, function ($q) use ($request) {
+                $q->whereYear('scheduled_datetime', $request->year);
+            })
+            ->get();
+
+        $data = [
+            'appointments' => $appointments,
+            'summary' => [
+                'total_revenue' => $appointments->sum('amount_received'),
+                'total_center_fee' => $appointments->sum('total_center_fee'),
+                'total_doctor_fee' => $appointments->sum('total_doctor_fee'),
+                'net_profit' => $appointments->sum('total_center_fee') - $appointments->sum('total_doctor_fee'),
+            ],
+            'exported_at' => now()->format('Y-m-d H:i:s'),
+        ];
+
+        return response()->json([
+            'message' => 'Export functionality would be implemented with Laravel Excel',
+            'data' => $data,
+            'filename' => 'payments_export_' . now()->format('Y-m-d_H-i-s') . '.xlsx'
+        ]);
+    }
 }

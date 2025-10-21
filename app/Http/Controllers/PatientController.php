@@ -244,4 +244,52 @@ class PatientController extends Controller
 
         return response()->json($stats);
     }
+
+    /**
+     * Get patient's medical records
+     */
+    public function medicalRecords(Patient $patient)
+    {
+        $medicalRecords = $patient->medicalRecords()
+            ->with(['doctor.user', 'clinic', 'appointment'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Patients/MedicalRecords', [
+            'patient' => $patient->load(['user', 'primaryDoctor.user']),
+            'medicalRecords' => $medicalRecords,
+        ]);
+    }
+
+    /**
+     * Get patient's prescriptions
+     */
+    public function prescriptions(Patient $patient)
+    {
+        $prescriptions = $patient->prescriptions()
+            ->with(['doctor.user', 'medicalRecord'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Patients/Prescriptions', [
+            'patient' => $patient->load(['user', 'primaryDoctor.user']),
+            'prescriptions' => $prescriptions,
+        ]);
+    }
+
+    /**
+     * Get patient's bills
+     */
+    public function bills(Patient $patient)
+    {
+        $bills = $patient->bills()
+            ->with(['appointment.doctor.user', 'appointment.patient.user'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Patients/Bills', [
+            'patient' => $patient->load(['user', 'primaryDoctor.user']),
+            'bills' => $bills,
+        ]);
+    }
 }

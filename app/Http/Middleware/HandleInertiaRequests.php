@@ -37,13 +37,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'roles' => $request->user()->roles()->get()->map(function($role) {
-                        return [
-                            'id' => $role->id,
-                            'name' => $role->name,
-                            'display_name' => $role->display_name
-                        ];
-                    }),
+                    'role' => $request->user()->primaryRole(),
                     'permissions' => [] // We can add permissions here later
                 ] : null
             ],

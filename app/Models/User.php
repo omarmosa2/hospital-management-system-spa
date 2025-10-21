@@ -202,11 +202,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasPermission(string $permission)
     {
-        if (!$this->role) {
-            return false;
+        foreach ($this->roles as $role) {
+            if ($role->hasPermission($permission)) {
+                return true;
+            }
         }
-
-        return $this->role->hasPermission($permission);
+        return false;
     }
 
     /**
@@ -214,11 +215,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasAnyPermission(array $permissions)
     {
-        if (!$this->role) {
-            return false;
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
         }
-
-        return $this->role->hasAnyPermission($permissions);
+        return false;
     }
 
     /**
@@ -226,11 +228,12 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasAllPermissions(array $permissions)
     {
-        if (!$this->role) {
-            return false;
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermission($permission)) {
+                return false;
+            }
         }
-
-        return $this->role->hasAllPermissions($permissions);
+        return true;
     }
 
     /**
@@ -247,5 +250,63 @@ class User extends Authenticatable implements MustVerifyEmail
     public function cannotPerform(string $permission)
     {
         return !$this->canPerform($permission);
+    }
+
+    /**
+     * Setup standard permissions for roles
+     */
+    public static function setupStandardPermissions()
+    {
+        // Create permissions
+        $permissions = [
+            'view-patients', 'create-patients', 'edit-patients', 'delete-patients',
+            'view-doctors', 'create-doctors', 'edit-doctors', 'delete-doctors',
+            'view-clinics', 'create-clinics', 'edit-clinics', 'delete-clinics',
+            'view-appointments', 'create-appointments', 'edit-appointments', 'delete-appointments',
+            'manage-appointment-status', 'view-reports', 'export-reports',
+            'view-payments', 'manage-payments', 'view-salaries', 'manage-salaries',
+            'view-my-salary'
+        ];
+
+        // Create permissions if they don't exist
+        foreach ($permissions as $permissionName) {
+            Permission::firstOrCreate(
+                ['name' => $permissionName],
+                ['display_name' => ucwords(str_replace('-', ' ', $permissionName)), 'description' => '']
+            );
+        }
+
+        // Admin permissions
+        $adminRole = Role::where('name', 'admin')->first();
+        if ($adminRole) {
+            $adminRole->givePermissions([
+                'view-patients', 'create-patients', 'edit-patients', 'delete-patients',
+                'view-doctors', 'create-doctors', 'edit-doctors', 'delete-doctors',
+                'view-clinics', 'create-clinics', 'edit-clinics', 'delete-clinics',
+                'view-appointments', 'create-appointments', 'edit-appointments', 'delete-appointments',
+                'manage-appointment-status', 'view-reports', 'export-reports',
+                'view-payments', 'manage-payments', 'view-salaries', 'manage-salaries'
+            ]);
+        }
+
+        // Receptionist permissions
+        $receptionistRole = Role::where('name', 'receptionist')->first();
+        if ($receptionistRole) {
+            $receptionistRole->givePermissions([
+                'view-patients', 'create-patients', 'edit-patients', 'delete-patients',
+                'view-doctors', 'view-clinics',
+                'view-appointments', 'create-appointments', 'edit-appointments', 'delete-appointments',
+                'manage-appointment-status'
+            ]);
+        }
+
+        // Doctor permissions
+        $doctorRole = Role::where('name', 'doctor')->first();
+        if ($doctorRole) {
+            $doctorRole->givePermissions([
+                'view-appointments', 'edit-appointments', 'manage-appointment-status',
+                'view-my-salary'
+            ]);
+        }
     }
 }
