@@ -10,12 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
 
 Route::get('/dashboard', function () {
@@ -24,44 +19,104 @@ Route::get('/dashboard', function () {
 
 // Protected routes that require authentication
 Route::middleware('auth')->group(function () {
+    // Common routes for all authenticated users
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
 
-// Patient Management Routes
-Route::middleware(['auth'])->group(function () {
-    Route::resource('patients', PatientController::class);
-    Route::get('/patients/{patient}/medical-records', [PatientController::class, 'medicalRecords'])->name('patients.medical-records');
-    Route::get('/patients/{patient}/prescriptions', [PatientController::class, 'prescriptions'])->name('patients.prescriptions');
-    Route::get('/patients/{patient}/bills', [PatientController::class, 'bills'])->name('patients.bills');
-});
+    // Clinic Management Routes
+    Route::prefix('clinics')->group(function () {
+        // View routes - accessible by admin and reception
+        Route::middleware('role:admin|reception')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ClinicController::class, 'index'])->name('clinics.index');
+            Route::get('/{clinic}', [\App\Http\Controllers\ClinicController::class, 'show'])->name('clinics.show');
+        });
+        
+        // Admin only routes - full control
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/', [\App\Http\Controllers\ClinicController::class, 'store'])->name('clinics.store');
+            Route::put('/{clinic}', [\App\Http\Controllers\ClinicController::class, 'update'])->name('clinics.update');
+            Route::delete('/{clinic}', [\App\Http\Controllers\ClinicController::class, 'destroy'])->name('clinics.destroy');
+        });
+    });
 
-// Clinic Management Routes
-Route::middleware(['auth'])->group(function () {
-    Route::resource('clinics', \App\Http\Controllers\ClinicController::class);
-});
+    // Doctor Management Routes
+    Route::prefix('doctors')->group(function () {
+        // View routes - accessible by admin and reception
+        Route::middleware('role:admin|reception')->group(function () {
+            Route::get('/', [\App\Http\Controllers\DoctorController::class, 'index'])->name('doctors.index');
+            Route::get('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'show'])->name('doctors.show');
+        });
+        
+        // Admin only routes - full control
+        Route::middleware('role:admin')->group(function () {
+            Route::post('/', [\App\Http\Controllers\DoctorController::class, 'store'])->name('doctors.store');
+            Route::put('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'update'])->name('doctors.update');
+            Route::delete('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'destroy'])->name('doctors.destroy');
+        });
+    });
 
-// Doctor Management Routes
-Route::middleware(['auth'])->group(function () {
-    Route::resource('doctors', \App\Http\Controllers\DoctorController::class);
-});
+    // Patient Management Routes
+    Route::prefix('patients')->group(function () {
+        // Admin can only view
+        Route::middleware('role:admin|reception')->group(function () {
+            Route::get('/', [PatientController::class, 'index'])->name('patients.index');
+            Route::get('/{patient}', [PatientController::class, 'show'])->name('patients.show');
+            Route::get('/{patient}/medical-records', [PatientController::class, 'medicalRecords'])->name('patients.medical-records');
+            Route::get('/{patient}/prescriptions', [PatientController::class, 'prescriptions'])->name('patients.prescriptions');
+            Route::get('/{patient}/bills', [PatientController::class, 'bills'])->name('patients.bills');
+        });
+        
+        // Reception has full control
+        Route::middleware('role:reception')->group(function () {
+            Route::post('/', [PatientController::class, 'store'])->name('patients.store');
+            Route::put('/{patient}', [PatientController::class, 'update'])->name('patients.update');
+            Route::delete('/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
+        });
+    });
 
-// User Management Routes (placeholder for now)
-Route::middleware(['auth'])->group(function () {
-    Route::get('/users', function () {
-        $patients = \App\Models\Patient::with(['user', 'primaryDoctor'])->get()->toArray();
-        return Inertia::render('Patients/Index', [
-            'patients' => $patients
-        ]);
-    })->name('users.index');
-});
+    // Appointment Management Routes
+    Route::prefix('appointments')->group(function () {
+        // All authenticated users can view appointments (doctors see only their own)
+        Route::middleware('role:admin|reception|doctor')->group(function () {
+            Route::get('/', [AppointmentController::class, 'index'])->name('appointments.index');
+            Route::get('/{appointment}', [AppointmentController::class, 'show'])->name('appointments.show');
+        });
+        
+        // Reception and Admin can manage appointments
+        Route::middleware('role:reception|admin')->group(function () {
+            Route::post('/', [AppointmentController::class, 'store'])->name('appointments.store');
+            Route::put('/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+            Route::delete('/{appointment}', [AppointmentController::class, 'destroy'])->name('appointments.destroy');
+            Route::patch('/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
+            Route::get('/available-slots', [AppointmentController::class, 'getAvailableSlots'])->name('appointments.available-slots');
+        });
+    });
 
-// Appointment Management Routes
-Route::middleware(['auth'])->group(function () {
-    Route::resource('appointments', AppointmentController::class);
-    Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
-    Route::get('/appointments/available-slots', [AppointmentController::class, 'getAvailableSlots'])->name('appointments.available-slots');
+    // Reports Routes - Admin only
+    Route::middleware('role:admin')->prefix('reports')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/export', [ReportController::class, 'export'])->name('reports.export');
+    });
+
+    // Financial Routes - Admin only
+    Route::middleware('role:admin')->group(function () {
+        // Payments management
+        Route::prefix('payments')->group(function () {
+            Route::get('/', [SalaryController::class, 'payments'])->name('payments.index');
+            Route::get('/export', [SalaryController::class, 'exportPayments'])->name('payments.export');
+        });
+
+        // Salary management
+        Route::prefix('salaries')->group(function () {
+            Route::resource('salaries', SalaryController::class);
+        });
+    });
+
+    // Doctor Salary View - Doctors can view their own salary
+    Route::middleware('role:doctor')->prefix('my-salary')->group(function () {
+        Route::get('/', [SalaryController::class, 'showMySalary'])->name('doctor.salary');
+    });
 });
 
 // Appointments Index Route

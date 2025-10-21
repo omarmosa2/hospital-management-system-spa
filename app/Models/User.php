@@ -22,7 +22,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'role_id',
         'two_factor_secret',
         'two_factor_recovery_codes',
         'two_factor_confirmed_at',
@@ -56,19 +55,21 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the primary role for this user.
-     */
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
-
-    /**
      * Get all roles for this user.
      */
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'user_roles')
+            ->withTimestamps()
+            ->withPivot('assigned_at');
+    }
+
+    /**
+     * Get the primary role of this user.
+     */
+    public function primaryRole()
+    {
+        return $this->roles()->oldest('assigned_at')->first();
     }
 
     /**
@@ -76,19 +77,26 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasRole(string $role)
     {
-        return $this->role && $this->role->name === $role;
+        return $this->roles()->where('name', $role)->exists();
     }
 
     /**
      * Check if user has any of the given roles.
      */
-    public function hasAnyRole(array $roles)
+    public function hasAnyRole(array|string $roles)
     {
-        if ($this->role && in_array($this->role->name, $roles)) {
-            return true;
+        if (is_string($roles)) {
+            $roles = array_map('trim', explode('|', $roles));
         }
-
         return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    /**
+     * Check if user has all of the given roles.
+     */
+    public function hasAllRoles(array $roles)
+    {
+        return $this->roles()->whereIn('name', $roles)->count() === count($roles);
     }
 
     /**
@@ -132,12 +140,26 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get user's display role name.
+     */
+    public function getRoleDisplayName()
+    {
+        $role = $this->primaryRole();
+        return $role ? $role->display_name : 'No Role Assigned';
+    }
+
+    /**
      * Assign a role to the user.
      */
-    public function assignRole(Role $role)
+    public function assignRole($role)
     {
-        $this->role()->associate($role);
-        $this->save();
+        if (is_string($role)) {
+            $role = Role::where('name', $role)->firstOrFail();
+        }
+        
+        if (!$this->roles()->where('roles.id', $role->id)->exists()) {
+            $this->roles()->attach($role->id, ['assigned_at' => now()]);
+        }
     }
 
     /**
