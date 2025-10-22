@@ -63,11 +63,11 @@ class Doctor extends Model
     }
 
     /**
-     * Get the patients assigned to this doctor.
+     * Get the patients assigned to this doctor via appointments.
      */
     public function patients()
     {
-        return $this->hasMany(Patient::class, 'primary_doctor_id');
+        return $this->belongsToMany(Patient::class, 'appointments', 'doctor_id', 'patient_id')->distinct();
     }
 
     /**

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Head, usePage, Link } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import { Link } from 'react-router-dom';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
@@ -269,12 +270,10 @@ export default function DoctorDashboard() {
                     </CardHeader>
                     <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <Link href={route('doctor.patients.index')}>
-                            <Button className="flex flex-col items-center p-4 h-auto">
-                                <Users className="h-6 w-6 mb-2" />
-                                <span className="text-xs">مرضاي</span>
-                            </Button>
-                        </Link>
+                        <button className="flex flex-col items-center p-4 h-auto">
+                            <Users className="h-6 w-6 mb-2" />
+                            <span className="text-xs">مرضاي</span>
+                        </button>
                         <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
                             <Calendar className="h-6 w-6 mb-2" />
                             <span className="text-xs">المواعيد</span>

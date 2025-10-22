@@ -7,8 +7,10 @@ use App\Http\Controllers\ClinicController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 
@@ -18,11 +20,100 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard', [
+    $user = auth()->user();
+    if (!$user) {
+        return redirect()->route('login');
+    }
+
+    // Get user permissions
+    $permissions = [];
+    if ($user) {
+        foreach ($user->roles as $role) {
+            $permissions = array_merge($permissions, $role->permissions->pluck('name')->toArray());
+        }
+        $permissions = array_unique($permissions);
+    }
+
+    // Get stats based on user role
+    $stats = [];
+    if ($user && $user->roles->isNotEmpty()) {
+        $primaryRole = $user->roles->first();
+
+        switch ($primaryRole->name) {
+            case 'admin':
+                $stats = [
+                    'admin' => [
+                        'totalUsers' => \App\Models\User::count(),
+                        'totalPatients' => \App\Models\Patient::count(),
+                        'totalDoctors' => \App\Models\Doctor::count(),
+                        'todayAppointments' => \App\Models\Appointment::whereDate('scheduled_datetime', today())->count(),
+                        'totalRevenue' => \App\Models\Bill::whereMonth('created_at', now()->month)->sum('total_amount'),
+                    ]
+                ];
+                break;
+            case 'doctor':
+                $doctor = $user->doctor;
+                $stats = [
+                    'doctor' => [
+                        'todayAppointments' => $doctor ? $doctor->appointments()->whereDate('scheduled_datetime', today())->count() : 0,
+                        'totalPatients' => $doctor ? $doctor->patients()->count() : 0,
+                        'pendingRecords' => $doctor ? $doctor->medicalRecords()->where('status', 'pending')->count() : 0,
+                        'completedToday' => $doctor ? $doctor->medicalRecords()->whereDate('created_at', today())->count() : 0,
+                    ]
+                ];
+                break;
+            case 'receptionist':
+                $stats = [
+                    'receptionist' => [
+                        'todayAppointments' => \App\Models\Appointment::whereDate('scheduled_datetime', today())->count(),
+                        'totalPatients' => \App\Models\Patient::count(),
+                        'pendingAppointments' => \App\Models\Appointment::where('status', 'pending')->count(),
+                    ]
+                ];
+                break;
+            case 'patient':
+                $patient = $user->patient;
+                $stats = [
+                    'patient' => [
+                        'myAppointments' => $patient ? $patient->appointments()->where('appointment_date', '>=', today())->count() : 0,
+                        'medicalRecords' => $patient ? $patient->medicalRecords()->count() : 0,
+                        'bills' => $patient ? $patient->bills()->where('status', 'unpaid')->count() : 0,
+                    ]
+                ];
+                break;
+        }
+    }
+
+    // Get recent activity logs
+    $activityLogs = \App\Models\ActivityLog::with('user')
+        ->latest()
+        ->take(10)
+        ->get()
+        ->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'action' => $log->event ?: 'activity',
+                'description' => $log->description,
+                'user_name' => $log->user ? $log->user->name : 'System',
+                'created_at' => $log->created_at,
+            ];
+        })->toArray();
+
+    return Inertia::render('Dashboard/UnifiedDashboard', [
         'status' => session('message'),
-        'error' => session('error')
+        'error' => session('error'),
+        'stats' => $stats,
+        'permissions' => $permissions,
+        'activityLogs' => $activityLogs,
     ]);
 })->middleware(['auth'])->name('dashboard');
+
+// Login and logout routes for Inertia
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
 
 // Protected routes that require authentication
 Route::middleware('auth')->group(function () {
@@ -162,6 +253,38 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('/salaries/stats', [SalaryController::class, 'getStats'])->name('api.salaries.stats');
     });
+
+    // Activity logging
+    Route::post('/activity-log', function (Request $request) {
+        $request->validate([
+            'action' => 'required|string',
+            'details' => 'required|string',
+            'user_id' => 'required|exists:users,id',
+            'role' => 'required|string',
+        ]);
+
+        \App\Models\ActivityLog::create([
+            'log_name' => 'user_activity',
+            'description' => $request->details,
+            'event' => $request->action,
+            'causer_type' => \App\Models\User::class,
+            'causer_id' => $request->user_id,
+            'properties' => [
+                'role' => $request->role,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ],
+        ]);
+
+        return response()->json(['message' => 'Activity logged successfully']);
+    })->name('api.activity-log');
+});
+
+// Admin routes for role switching (testing purposes)
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::post('/switch-role', [App\Http\Controllers\Admin\RoleSwitchController::class, 'switchRole'])->name('admin.switch-role');
+    Route::post('/restore-role', [App\Http\Controllers\Admin\RoleSwitchController::class, 'restoreRole'])->name('admin.restore-role');
+    Route::get('/available-roles', [App\Http\Controllers\Admin\RoleSwitchController::class, 'getAvailableRoles'])->name('admin.available-roles');
 });
 
 require __DIR__.'/auth.php';
