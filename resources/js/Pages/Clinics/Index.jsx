@@ -372,7 +372,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                             </Button>
                         )}
                         {canCreateClinics && (
-                            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowCreateModal(true)}>
+                            <Button onClick={() => setShowCreateModal(true)}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 إضافة عيادة جديدة
                             </Button>
@@ -388,7 +388,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">إجمالي العيادات</CardTitle>
+                            <CardTitle className="text-sm font-medium text-darkText">إجمالي العيادات</CardTitle>
                             <Building2 className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -398,7 +398,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">العيادات الفعالة</CardTitle>
+                            <CardTitle className="text-sm font-medium text-darkText">العيادات الفعالة</CardTitle>
                             <CheckCircle className="h-4 w-4 text-green-600" />
                         </CardHeader>
                         <CardContent>
@@ -408,7 +408,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">العيادات غير الفعالة</CardTitle>
+                            <CardTitle className="text-sm font-medium text-darkText">العيادات غير الفعالة</CardTitle>
                             <XCircle className="h-4 w-4 text-red-600" />
                         </CardHeader>
                         <CardContent>
@@ -418,7 +418,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">إجمالي الأطباء</CardTitle>
+                            <CardTitle className="text-sm font-medium text-darkText">إجمالي الأطباء</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -432,9 +432,9 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle className="flex items-center">
-                                    <Building2 className="mr-2 h-5 w-5 text-blue-600" />
-                                    جميع العيادات
-                                </CardTitle>
+                                            <Building2 className="ml-2 h-5 w-5 text-primary" />
+                                            جميع العيادات
+                                        </CardTitle>
                                 <CardDescription>
                                     {filteredClinics.length} عيادة موجودة في النظام {isReadOnly ? '- صلاحيات القراءة فقط' : '- تحكم كامل'}
                                 </CardDescription>
@@ -589,9 +589,9 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                     <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-gray-200">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Building2 className="h-5 w-5 text-blue-600" />
-                                </div>
+                             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                                 <Building2 className="h-5 w-5 text-primary" />
+                             </div>
                                 <h2 className="text-xl font-bold text-gray-900">🩺 إضافة عيادة جديدة</h2>
                             </div>
                         </div>
@@ -808,7 +808,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                 </Button>
                                 <PrimaryButton
                                     disabled={createForm.processing}
-                                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                                    className="px-8 py-2 disabled:opacity-50"
                                 >
                                     {createForm.processing ? (
                                         <>
@@ -832,9 +832,9 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                     <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-gray-200">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Edit className="h-5 w-5 text-blue-600" />
-                                </div>
+                             <div className="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+                                 <Edit className="h-5 w-5 text-secondary" />
+                             </div>
                                 <h2 className="text-xl font-bold text-gray-900">✏️ تعديل العيادة</h2>
                             </div>
                         </div>
@@ -1066,7 +1066,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                 </Button>
                                 <PrimaryButton
                                     disabled={editForm.processing}
-                                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                                    className="px-8 py-2 disabled:opacity-50"
                                 >
                                     {editForm.processing ? (
                                         <>
@@ -1109,7 +1109,7 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                 </Button>
                                 <DangerButton
                                     onClick={confirmDelete}
-                                    className="px-6 py-2 bg-red-600 hover:bg-red-700"
+                                    className="px-6 py-2"
                                 >
                                     <Trash2 className="w-4 h-4 ml-2" />
                                     حذف نهائي
@@ -1125,9 +1125,9 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                         <div className="p-6 border-b border-gray-200">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <Eye className="h-5 w-5 text-blue-600" />
-                                    </div>
+                                 <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                                     <Eye className="h-5 w-5 text-success" />
+                                 </div>
                                     <div>
                                         <h2 className="text-xl font-bold text-gray-900">تفاصيل العيادة</h2>
                                         <p className="text-sm text-gray-600">{selectedClinic?.name}</p>
