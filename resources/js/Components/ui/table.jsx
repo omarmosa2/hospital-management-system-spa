@@ -26,7 +26,7 @@ export function TableBody({ className = '', ...props }) {
 export function TableRow({ className = '', ...props }) {
     return (
         <tr
-            className={`border-b transition-colors hover:bg-gray-50 ${className}`}
+            className={`table-row transition-colors hover:bg-gray-50 ${className}`}
             {...props}
         />
     );
@@ -35,7 +35,7 @@ export function TableRow({ className = '', ...props }) {
 export function TableHead({ className = '', ...props }) {
     return (
         <th
-            className={`h-12 px-4 text-left align-middle font-medium text-gray-700 ${className}`}
+            className={`h-12 px-4 text-right align-middle font-medium text-darkText ${className}`}
             {...props}
         />
     );

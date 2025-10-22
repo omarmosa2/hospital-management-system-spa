@@ -357,10 +357,10 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
             header={
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                        <h2 className="font-semibold text-xl text-darkText leading-tight">
                             إدارة العيادات
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-500 mt-1">
                             {isReadOnly ? 'عرض العيادات المتاحة (صلاحيات القراءة فقط)' : 'إدارة جميع العيادات والخدمات الطبية - تحكم كامل'}
                         </p>
                     </div>

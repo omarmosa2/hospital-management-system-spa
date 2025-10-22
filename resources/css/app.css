@@ -1,3 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background-color: #F8FAFC;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-secondary rounded-lg px-4 py-2 transition duration-200;
+  }
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300 rounded-lg px-4 py-2 transition duration-200;
+  }
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-md p-6;
+  }
+  .table-row {
+    @apply border-b border-gray-200 dark:border-gray-700;
+  }
+  .table-row:nth-child(odd) {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+  .table-row:nth-child(even) {
+    @apply bg-white dark:bg-gray-800;
+  }
+}

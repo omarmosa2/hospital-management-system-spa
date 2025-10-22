@@ -73,8 +73,8 @@ export default function AdminDashboard() {
             header={
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                            Admin Dashboard
+                        <h2 className="font-semibold text-xl text-darkText leading-tight">
+                            لوحة تحكم المدير
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
                             Welcome back, {auth.user.name}
@@ -109,14 +109,14 @@ export default function AdminDashboard() {
 
             <div className="space-y-6">
                 {/* Welcome Section */}
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-l from-primary to-secondary rounded-xl p-6 text-white">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-bold mb-2">
-                                Good morning, {auth.user.name}! 👋
+                                صباح الخير، {auth.user.name}! 👋
                             </h1>
                             <p className="text-blue-100 mb-4">
-                                Here's what's happening with your hospital today.
+                                إليك ملخص ما يحدث في مستشفىك اليوم.
                             </p>
                             <div className="flex items-center space-x-4 text-sm">
                                 <div className="flex items-center">

@@ -13,10 +13,22 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Tajawal', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                primary: '#00A9A5',
+                secondary: '#007C7A',
+                background: '#F8FAFC',
+                darkText: '#1E293B',
+                success: '#10B981',
+                danger: '#EF4444',
+            },
+            screens: {
+                'xs': '475px',
             },
         },
     },
 
     plugins: [forms],
+    darkMode: 'class',
 };
