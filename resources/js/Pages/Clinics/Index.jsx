@@ -486,78 +486,95 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                 {/* Clinics Table */}
                 <Card>
                     <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-right">اسم العيادة</TableHead>
-                                    <TableHead className="text-right">التخصص</TableHead>
-                                    <TableHead className="text-right">أيام الدوام</TableHead>
-                                    <TableHead className="text-right">الحالة</TableHead>
-                                    <TableHead className="text-right">عدد الأطباء</TableHead>
-                                    <TableHead className="text-right">عدد المواعيد</TableHead>
-                                    <TableHead className="text-right">آخر تحديث</TableHead>
-                                    <TableHead className="text-right">الإجراءات</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredClinics.map((clinic) => (
-                                    <TableRow key={clinic.id}>
-                                        <TableCell className="font-medium">{clinic.name}</TableCell>
-                                        <TableCell>{clinic.specialty || 'غير محدد'}</TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">
-                                                {clinic.schedules && Array.isArray(clinic.schedules) && clinic.schedules.length > 0
-                                                    ? clinic.schedules.map(schedule => {
-                                                        const dayNames = {
-                                                            'monday': 'الإثنين',
-                                                            'tuesday': 'الثلاثاء',
-                                                            'wednesday': 'الأربعاء',
-                                                            'thursday': 'الخميس',
-                                                            'friday': 'الجمعة',
-                                                            'saturday': 'السبت',
-                                                            'sunday': 'الأحد'
-                                                        };
-                                                        return `${dayNames[schedule.day_of_week] || schedule.day_of_week}: ${schedule.open_time}-${schedule.close_time}${schedule.is_closed ? ' (عطلة)' : ''}`;
-                                                    }).join(', ')
-                                                    : 'غير محدد'
-                                                }
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                className={
-                                                    clinic.is_active
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
-                                                }
-                                            >
-                                                {clinic.is_active ? 'فعالة' : 'غير فعالة'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{clinic.doctors_count}</TableCell>
-                                        <TableCell>{clinic.appointments_count}</TableCell>
-                                        <TableCell>{new Date(clinic.updated_at).toLocaleDateString('ar')}</TableCell>
-                                        <TableCell>
-                                            <div className="flex space-x-2">
-                                                <Button size="sm" variant="outline" onClick={() => handleViewDetails(clinic)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {canEditClinics && (
-                                                    <Button size="sm" variant="outline" onClick={() => handleEdit(clinic)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                                {canDeleteClinics && (
-                                                    <Button size="sm" variant="outline" onClick={() => handleDelete(clinic)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-gray-50">
+                                        <TableHead className="text-center font-bold text-darkText p-4">اسم العيادة</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">التخصص</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">أيام الدوام</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">الحالة</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">عدد الأطباء</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">عدد المواعيد</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">آخر تحديث</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">الإجراءات</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredClinics.map((clinic, index) => (
+                                        <TableRow key={clinic.id} className="text-center hover:bg-gray-50 transition-colors duration-200">
+                                            <TableCell className="font-semibold text-darkText p-4">{clinic.name}</TableCell>
+                                            <TableCell className="text-gray-700 p-4">{clinic.specialty || 'غير محدد'}</TableCell>
+                                            <TableCell className="text-sm text-gray-600 p-4">
+                                                <div className="space-y-1 max-w-xs">
+                                                    {clinic.schedules && Array.isArray(clinic.schedules) && clinic.schedules.length > 0 ? (
+                                                        <div className="grid grid-cols-1 gap-1">
+                                                            {clinic.schedules.map((schedule, idx) => {
+                                                                const dayNames = {
+                                                                    'monday': 'الإثنين',
+                                                                    'tuesday': 'الثلاثاء',
+                                                                    'wednesday': 'الأربعاء',
+                                                                    'thursday': 'الخميس',
+                                                                    'friday': 'الجمعة',
+                                                                    'saturday': 'السبت',
+                                                                    'sunday': 'الأحد'
+                                                                };
+                                                                const dayName = dayNames[schedule.day_of_week] || schedule.day_of_week;
+                                                                const timeInfo = schedule.is_closed
+                                                                    ? 'عطلة'
+                                                                    : `${schedule.open_time} - ${schedule.close_time}`;
+
+                                                                return (
+                                                                    <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 rounded px-2 py-1">
+                                                                        <span className="font-medium text-darkText">{dayName}:</span>
+                                                                        <span className={`font-medium ${schedule.is_closed ? 'text-danger' : 'text-success'}`}>
+                                                                            {timeInfo}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">غير محدد</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="p-4">
+                                                <Badge
+                                                    className={`px-3 py-1 text-xs font-medium ${
+                                                        clinic.is_active
+                                                            ? 'bg-success/10 text-success border-success/20'
+                                                            : 'bg-danger/10 text-danger border-danger/20'
+                                                    }`}
+                                                >
+                                                    {clinic.is_active ? 'فعالة' : 'غير فعالة'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium text-darkText p-4">{clinic.doctors_count}</TableCell>
+                                            <TableCell className="font-medium text-darkText p-4">{clinic.appointments_count}</TableCell>
+                                            <TableCell className="text-sm text-gray-500 p-4">{new Date(clinic.updated_at).toLocaleDateString('ar')}</TableCell>
+                                            <TableCell className="p-4">
+                                                <div className="flex justify-center items-center space-x-2">
+                                                    <Button size="sm" variant="outline" className="hover:bg-success/10 hover:border-success/30" onClick={() => handleViewDetails(clinic)}>
+                                                        <Eye className="h-4 w-4 text-success" />
+                                                    </Button>
+                                                    {canEditClinics && (
+                                                        <Button size="sm" variant="outline" className="hover:bg-secondary/10 hover:border-secondary/30" onClick={() => handleEdit(clinic)}>
+                                                            <Edit className="h-4 w-4 text-secondary" />
+                                                        </Button>
+                                                    )}
+                                                    {canDeleteClinics && (
+                                                        <Button size="sm" variant="outline" className="hover:bg-danger/10 hover:border-danger/30" onClick={() => handleDelete(clinic)}>
+                                                            <Trash2 className="h-4 w-4 text-danger" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 

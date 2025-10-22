@@ -91,16 +91,16 @@ export default function DoctorsIndex({ doctors, can, auth }) {
             header={
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                        <h2 className="font-semibold text-xl text-darkText leading-tight">
                             إدارة الأطباء
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-500 mt-1">
                             إدارة جميع الأطباء والتخصصات الطبية - تحكم كامل
                         </p>
                     </div>
                     {can.create && (
                         <Link href={route('doctors.create')}>
-                            <Button className="bg-blue-600 hover:bg-blue-700">
+                            <Button>
                                 <Plus className="mr-2 h-4 w-4" />
                                 إضافة طبيب جديد
                             </Button>
@@ -118,9 +118,9 @@ export default function DoctorsIndex({ doctors, can, auth }) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle className="flex items-center">
-                                    <Stethoscope className="mr-2 h-5 w-5 text-blue-600" />
-                                    جميع الأطباء
-                                </CardTitle>
+                                            <Stethoscope className="ml-2 h-5 w-5 text-primary" />
+                                            جميع الأطباء
+                                        </CardTitle>
                                 <CardDescription>
                                     {filteredDoctors.length} طبيب مسجل في النظام - تحكم كامل
                                 </CardDescription>
@@ -175,101 +175,111 @@ export default function DoctorsIndex({ doctors, can, auth }) {
                 {/* Doctors Table */}
                 <Card>
                     <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-right">الاسم</TableHead>
-                                    <TableHead className="text-right">الاختصاص</TableHead>
-                                    <TableHead className="text-right">العيادة</TableHead>
-                                    <TableHead className="text-right">رقم الهاتف</TableHead>
-                                    <TableHead className="text-right">الحالة</TableHead>
-                                    <TableHead className="text-right">أيام العمل</TableHead>
-                                    <TableHead className="text-right">آخر تعديل</TableHead>
-                                    <TableHead className="text-right">الإجراءات</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredDoctors.map((doctor) => (
-                                    <TableRow key={doctor.id} className={doctor.is_available ? '' : 'opacity-60'}>
-                                        <TableCell className="font-medium">
-                                            د. {doctor.user?.name}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center">
-                                                <Award className="h-4 w-4 ml-2 text-blue-600" />
-                                                {doctor.specialization}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{doctor.clinic?.name || 'غير محدد'}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center text-gray-600">
-                                                <Phone className="h-4 w-4 ml-1" />
-                                                {doctor.office_phone || 'غير محدد'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge
-                                                className={
-                                                    doctor.is_available
-                                                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                        : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                                }
-                                            >
-                                                {doctor.is_available ? 'فعّال' : 'غير فعّال'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-sm">
-                                            {doctor.schedules && doctor.schedules.length > 0 ? (
-                                                <div className="space-y-1">
-                                                    {doctor.schedules.map((schedule) => (
-                                                        <div key={schedule.id} className="text-xs flex justify-between">
-                                                            <span>{schedule.day_name_ar}:</span>
-                                                            {schedule.is_closed ? (
-                                                                <span className="text-red-500">مغلق</span>
-                                                            ) : (
-                                                                <span>{schedule.open_time} - {schedule.close_time}</span>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="text-gray-500">لا توجد جداول</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-500">
-                                            {new Date(doctor.updated_at).toLocaleDateString('ar-SY')}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => openDoctorModal(doctor)}
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                {can.edit && (
-                                                    <Link href={route('doctors.edit', doctor.id)}>
-                                                        <Button size="sm" variant="outline">
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
-                                                )}
-                                                {can.delete && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="destructive"
-                                                        onClick={() => handleDelete(doctor.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-gray-50">
+                                        <TableHead className="text-center font-bold text-darkText p-4">الاسم</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">الاختصاص</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">العيادة</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">رقم الهاتف</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">الحالة</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">أيام العمل</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">آخر تعديل</TableHead>
+                                        <TableHead className="text-center font-bold text-darkText p-4">الإجراءات</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredDoctors.map((doctor, index) => (
+                                        <TableRow key={doctor.id} className="text-center hover:bg-gray-50 transition-colors duration-200">
+                                            <TableCell className="font-semibold text-darkText p-4">
+                                                د. {doctor.user?.name}
+                                            </TableCell>
+                                            <TableCell className="text-gray-700 p-4">
+                                                <div className="flex items-center justify-center">
+                                                    <Award className="h-4 w-4 ml-2 text-primary" />
+                                                    {doctor.specialization}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-gray-700 p-4">{doctor.clinic?.name || 'غير محدد'}</TableCell>
+                                            <TableCell className="text-gray-700 p-4">
+                                                <div className="flex items-center justify-center text-gray-600">
+                                                    <Phone className="h-4 w-4 ml-1" />
+                                                    {doctor.office_phone || 'غير محدد'}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="p-4">
+                                                <Badge
+                                                    className={`px-3 py-1 text-xs font-medium ${
+                                                        doctor.is_available
+                                                            ? 'bg-success/10 text-success border-success/20'
+                                                            : 'bg-danger/10 text-danger border-danger/20'
+                                                    }`}
+                                                >
+                                                    {doctor.is_available ? 'فعّال' : 'غير فعّال'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-gray-600 p-4">
+                                                <div className="space-y-1 max-w-xs">
+                                                    {doctor.schedules && doctor.schedules.length > 0 ? (
+                                                        <div className="grid grid-cols-1 gap-1">
+                                                            {doctor.schedules.map((schedule, idx) => {
+                                                                const dayNames = {
+                                                                    'monday': 'الإثنين',
+                                                                    'tuesday': 'الثلاثاء',
+                                                                    'wednesday': 'الأربعاء',
+                                                                    'thursday': 'الخميس',
+                                                                    'friday': 'الجمعة',
+                                                                    'saturday': 'السبت',
+                                                                    'sunday': 'الأحد'
+                                                                };
+                                                                const dayName = dayNames[schedule.day_of_week] || schedule.day_of_week;
+                                                                const timeInfo = schedule.is_closed
+                                                                    ? 'عطلة'
+                                                                    : `${schedule.open_time} - ${schedule.close_time}`;
+
+                                                                return (
+                                                                    <div key={schedule.id} className="flex justify-between items-center text-xs bg-gray-50 rounded px-2 py-1">
+                                                                        <span className="font-medium text-darkText">{dayName}:</span>
+                                                                        <span className={`font-medium ${schedule.is_closed ? 'text-danger' : 'text-success'}`}>
+                                                                            {timeInfo}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-gray-400 italic">غير محدد</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-gray-500 p-4">
+                                                {new Date(doctor.updated_at).toLocaleDateString('ar-SY')}
+                                            </TableCell>
+                                            <TableCell className="p-4">
+                                                <div className="flex justify-center items-center space-x-2">
+                                                    <Button size="sm" variant="outline" className="hover:bg-success/10 hover:border-success/30" onClick={() => openDoctorModal(doctor)}>
+                                                        <Eye className="h-4 w-4 text-success" />
+                                                    </Button>
+                                                    {can.edit && (
+                                                        <Link href={route('doctors.edit', doctor.id)}>
+                                                            <Button size="sm" variant="outline" className="hover:bg-secondary/10 hover:border-secondary/30">
+                                                                <Edit className="h-4 w-4 text-secondary" />
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                    {can.delete && (
+                                                        <Button size="sm" variant="destructive" onClick={() => handleDelete(doctor.id)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
 
                         {filteredDoctors.length === 0 && (
                             <div className="text-center py-12">
@@ -301,8 +311,8 @@ export default function DoctorsIndex({ doctors, can, auth }) {
                         {selectedDoctor && (
                             <>
                                 <div className="flex items-center mb-6">
-                                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                                        <Stethoscope className="h-8 w-8 text-blue-600" />
+                                    <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mr-4">
+                                        <Stethoscope className="h-8 w-8 text-primary" />
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-semibold">د. {selectedDoctor.user?.name}</h3>
