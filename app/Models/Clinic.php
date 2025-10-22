@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -75,6 +76,14 @@ class Clinic extends Model
     public function medicalRecords()
     {
         return $this->hasMany(MedicalRecord::class);
+    }
+
+    /**
+     * Get the schedules for this clinic.
+     */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(ClinicSchedule::class);
     }
 
     /**

@@ -23,7 +23,7 @@ class ClinicController extends Controller
             abort(403, 'Unauthorized access to clinics management.');
         }
 
-        $clinics = Clinic::with(['headDoctor.user', 'doctors.user', 'appointments' => function($query) {
+        $clinics = Clinic::with(['headDoctor.user', 'doctors.user', 'schedules', 'appointments' => function($query) {
                             $query->where('status', 'confirmed');
                         }])
                         ->withCount(['doctors', 'appointments' => function($query) {
@@ -43,6 +43,15 @@ class ClinicController extends Controller
                                 'doctors_count' => $clinic->doctors_count,
                                 'appointments_count' => $clinic->appointments_count,
                                 'head_doctor' => $clinic->headDoctor ? $clinic->headDoctor->user->name : null,
+                                'schedules' => $clinic->schedules->map(function($schedule) {
+                                    return [
+                                        'id' => $schedule->id,
+                                        'day_of_week' => $schedule->day_of_week,
+                                        'open_time' => $schedule->open_time->format('H:i'),
+                                        'close_time' => $schedule->close_time->format('H:i'),
+                                        'is_closed' => $schedule->is_closed,
+                                    ];
+                                }),
                                 'updated_at' => $clinic->updated_at,
                             ];
                         });
@@ -124,6 +133,18 @@ class ClinicController extends Controller
 
         $clinic = Clinic::create($validated);
 
+        // Handle schedules creation
+        if (isset($validated['schedules']) && is_array($validated['schedules'])) {
+            foreach ($validated['schedules'] as $scheduleData) {
+                $clinic->schedules()->create([
+                    'day_of_week' => $scheduleData['day_of_week'],
+                    'open_time' => $scheduleData['open_time'],
+                    'close_time' => $scheduleData['close_time'],
+                    'is_closed' => $scheduleData['is_closed'] ?? false,
+                ]);
+            }
+        }
+
         // Activity logging is handled automatically by the model trait
 
         return redirect()->route('clinics.index')
@@ -140,7 +161,7 @@ class ClinicController extends Controller
             abort(403, 'Unauthorized access to clinic details.');
         }
 
-        $clinic->load(['headDoctor.user', 'doctors.user']);
+        $clinic->load(['headDoctor.user', 'doctors.user', 'schedules']);
 
         return Inertia::render('Clinics/Show', [
             'clinic' => $clinic,
@@ -206,6 +227,22 @@ class ClinicController extends Controller
         }
 
         $clinic->update($validated);
+
+        // Handle schedules update
+        if (isset($validated['schedules']) && is_array($validated['schedules'])) {
+            // Delete existing schedules
+            $clinic->schedules()->delete();
+
+            // Create new schedules
+            foreach ($validated['schedules'] as $scheduleData) {
+                $clinic->schedules()->create([
+                    'day_of_week' => $scheduleData['day_of_week'],
+                    'open_time' => $scheduleData['open_time'],
+                    'close_time' => $scheduleData['close_time'],
+                    'is_closed' => $scheduleData['is_closed'] ?? false,
+                ]);
+            }
+        }
 
         return redirect()->route('clinics.index')
                         ->with('message', 'تم تحديث بيانات العيادة بنجاح');
@@ -296,7 +333,7 @@ class ClinicController extends Controller
             $query->where('is_active', $request->status === 'active');
         }
 
-        $clinics = $query->with(['headDoctor.user', 'doctors.user', 'appointments' => function($query) {
+        $clinics = $query->with(['headDoctor.user', 'doctors.user', 'schedules', 'appointments' => function($query) {
                             $query->where('status', 'confirmed');
                         }])
                         ->withCount(['doctors', 'appointments' => function($query) {
@@ -314,9 +351,14 @@ class ClinicController extends Controller
                                  'location' => $clinic->location,
                                  'phone' => $clinic->phone,
                                  'email' => $clinic->email,
-                                 'start_time' => $clinic->start_time ? $clinic->start_time->format('H:i') : null,
-                                 'end_time' => $clinic->end_time ? $clinic->end_time->format('H:i') : null,
-                                 'working_days' => $clinic->working_days,
+                                 'schedules' => $clinic->schedules->map(function($schedule) {
+                                     return [
+                                         'day_of_week' => $schedule->day_of_week,
+                                         'open_time' => $schedule->open_time->format('H:i'),
+                                         'close_time' => $schedule->close_time->format('H:i'),
+                                         'is_closed' => $schedule->is_closed,
+                                     ];
+                                 }),
                                  'max_patients_per_day' => $clinic->max_patients_per_day,
                                  'consultation_duration_minutes' => $clinic->consultation_duration_minutes,
                                  'is_active' => $clinic->is_active,

@@ -41,19 +41,18 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
         location: '',
         phone: '',
         email: '',
-        working_hours: {
-            saturday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            sunday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            monday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            tuesday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            wednesday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            thursday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-            friday: { enabled: true, start_time: '08:00', end_time: '18:00' },
-        },
+        schedules: [
+            { day_of_week: 'saturday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'sunday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'monday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'tuesday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'wednesday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'thursday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            { day_of_week: 'friday', open_time: '08:00', close_time: '18:00', is_closed: false },
+        ],
         max_patients_per_day: 50,
         consultation_duration_minutes: 30,
         is_active: true,
-        color: '#3b82f6', // Default blue color
         head_doctor_id: '',
     });
 
@@ -65,28 +64,24 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
             errors.name = 'اسم العيادة مطلوب';
         }
 
-        // Validate working hours
-        const days = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-        let hasEnabledDay = false;
-
-        days.forEach(day => {
-            const dayData = data.working_hours[day];
-            if (dayData.enabled) {
-                hasEnabledDay = true;
-                if (!dayData.start_time) {
-                    errors[`working_hours.${day}.start_time`] = `وقت بداية ${getDayName(day)} مطلوب`;
+        // Validate schedules
+        if (!data.schedules || !Array.isArray(data.schedules) || data.schedules.length === 0) {
+            errors.schedules = 'يجب إضافة جدول دوام واحد على الأقل';
+        } else {
+            data.schedules.forEach((schedule, index) => {
+                if (!schedule.day_of_week) {
+                    errors[`schedules.${index}.day_of_week`] = 'يوم الأسبوع مطلوب';
                 }
-                if (!dayData.end_time) {
-                    errors[`working_hours.${day}.end_time`] = `وقت نهاية ${getDayName(day)} مطلوب`;
+                if (!schedule.open_time) {
+                    errors[`schedules.${index}.open_time`] = 'وقت البداية مطلوب';
                 }
-                if (dayData.start_time && dayData.end_time && dayData.start_time >= dayData.end_time) {
-                    errors[`working_hours.${day}.end_time`] = `وقت نهاية ${getDayName(day)} يجب أن يكون بعد وقت البداية`;
+                if (!schedule.close_time) {
+                    errors[`schedules.${index}.close_time`] = 'وقت النهاية مطلوب';
                 }
-            }
-        });
-
-        if (!hasEnabledDay) {
-            errors.working_hours = 'يجب تفعيل يوم واحد على الأقل';
+                if (schedule.open_time && schedule.close_time && schedule.open_time >= schedule.close_time) {
+                    errors[`schedules.${index}.close_time`] = 'وقت النهاية يجب أن يكون بعد وقت البداية';
+                }
+            });
         }
 
         if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
@@ -117,19 +112,10 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
         location: '',
         phone: '',
         email: '',
-        working_hours: {
-            saturday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            sunday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            monday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            tuesday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            wednesday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            thursday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            friday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-        },
+        schedules: [],
         max_patients_per_day: '',
         consultation_duration_minutes: '',
         is_active: true,
-        color: '#3b82f6',
         head_doctor_id: '',
     });
 
@@ -222,28 +208,8 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
             return;
         }
 
-        // Transform working_hours to match backend expectations
+        // Transform schedules to match backend expectations
         const formData = { ...createForm.data };
-
-        // Extract start_time and end_time from working_hours for the first enabled day
-        const enabledDays = Object.entries(formData.working_hours)
-            .filter(([day, data]) => data.enabled);
-
-        if (enabledDays.length > 0) {
-            // Use the first enabled day's times as default start/end times
-            const firstDay = enabledDays[0][1];
-            formData.start_time = firstDay.start_time || '08:00';
-            formData.end_time = firstDay.end_time || '18:00';
-        } else {
-            formData.start_time = formData.start_time || '08:00';
-            formData.end_time = formData.end_time || '18:00';
-        }
-
-        // Convert working_days to array of enabled day names
-        formData.working_days = enabledDays.map(([day, data]) => day);
-
-        // Remove working_hours from form data as backend expects working_days
-        delete formData.working_hours;
 
         // Set default values for required fields
         formData.max_patients_per_day = formData.max_patients_per_day || 50;
@@ -275,33 +241,28 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
     };
 
     const handleEdit = (clinic) => {
-        // Initialize working hours from clinic data or default
-        const workingHours = {
-            saturday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            sunday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            monday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            tuesday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            wednesday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            thursday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-            friday: { enabled: false, start_time: '08:00', end_time: '18:00' },
-        };
+        // Initialize schedules from clinic data
+        let schedules = [];
+        if (clinic.schedules && Array.isArray(clinic.schedules)) {
+            schedules = clinic.schedules.map(schedule => ({
+                day_of_week: schedule.day_of_week,
+                open_time: schedule.open_time,
+                close_time: schedule.close_time,
+                is_closed: schedule.is_closed
+            }));
+        }
 
-        // Populate working hours from clinic data if available
-        if (clinic.working_hours) {
-            Object.keys(clinic.working_hours).forEach(day => {
-                if (workingHours[day]) {
-                    workingHours[day] = { ...workingHours[day], ...clinic.working_hours[day] };
-                }
-            });
-        } else if (clinic.working_days && Array.isArray(clinic.working_days)) {
-            // Fallback for old working_days array format
-            clinic.working_days.forEach(day => {
-                if (workingHours[day]) {
-                    workingHours[day].enabled = true;
-                    workingHours[day].start_time = clinic.start_time || '08:00';
-                    workingHours[day].end_time = clinic.end_time || '18:00';
-                }
-            });
+        // If no schedules, create default ones
+        if (schedules.length === 0) {
+            schedules = [
+                { day_of_week: 'saturday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'sunday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'monday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'tuesday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'wednesday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'thursday', open_time: '08:00', close_time: '18:00', is_closed: false },
+                { day_of_week: 'friday', open_time: '08:00', close_time: '18:00', is_closed: false },
+            ];
         }
 
         editForm.setData({
@@ -311,11 +272,10 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
             location: clinic.location || '',
             phone: clinic.phone || '',
             email: clinic.email || '',
-            working_hours: workingHours,
+            schedules: schedules,
             max_patients_per_day: clinic.max_patients_per_day || 50,
             consultation_duration_minutes: clinic.consultation_duration_minutes || 30,
             is_active: clinic.is_active,
-            color: clinic.color || '#3b82f6',
             head_doctor_id: '',
         });
         setEditingClinic(clinic);
@@ -332,28 +292,8 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
             return;
         }
 
-        // Transform working_hours to match backend expectations
+        // Transform schedules to match backend expectations
         const formData = { ...editForm.data };
-
-        // Extract start_time and end_time from working_hours for the first enabled day
-        const enabledDays = Object.entries(formData.working_hours)
-            .filter(([day, data]) => data.enabled);
-
-        if (enabledDays.length > 0) {
-            // Use the first enabled day's times as default start/end times
-            const firstDay = enabledDays[0][1];
-            formData.start_time = firstDay.start_time || '08:00';
-            formData.end_time = firstDay.end_time || '18:00';
-        } else {
-            formData.start_time = formData.start_time || '08:00';
-            formData.end_time = formData.end_time || '18:00';
-        }
-
-        // Convert working_days to array of enabled day names
-        formData.working_days = enabledDays.map(([day, data]) => day);
-
-        // Remove working_hours from form data as backend expects working_days
-        delete formData.working_hours;
 
         // Set default values for required fields
         formData.max_patients_per_day = formData.max_patients_per_day || 50;
@@ -566,8 +506,19 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                         <TableCell>{clinic.specialty || 'غير محدد'}</TableCell>
                                         <TableCell>
                                             <div className="text-sm">
-                                                {clinic.working_days && Array.isArray(clinic.working_days) && clinic.working_days.length > 0
-                                                    ? getWorkingDaysText(clinic.working_days)
+                                                {clinic.schedules && Array.isArray(clinic.schedules) && clinic.schedules.length > 0
+                                                    ? clinic.schedules.map(schedule => {
+                                                        const dayNames = {
+                                                            'monday': 'الإثنين',
+                                                            'tuesday': 'الثلاثاء',
+                                                            'wednesday': 'الأربعاء',
+                                                            'thursday': 'الخميس',
+                                                            'friday': 'الجمعة',
+                                                            'saturday': 'السبت',
+                                                            'sunday': 'الأحد'
+                                                        };
+                                                        return `${dayNames[schedule.day_of_week] || schedule.day_of_week}: ${schedule.open_time}-${schedule.close_time}${schedule.is_closed ? ' (عطلة)' : ''}`;
+                                                    }).join(', ')
                                                     : 'غير محدد'
                                                 }
                                             </div>
@@ -755,74 +706,74 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                             { key: 'wednesday', label: 'الأربعاء' },
                                             { key: 'thursday', label: 'الخميس' },
                                             { key: 'friday', label: 'الجمعة' },
-                                        ].map(({ key, label }) => (
-                                            <div key={key} className="space-y-2 p-3 bg-white rounded-md border">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-sm font-medium text-gray-700 flex items-center">
-                                                        <Checkbox
-                                                            checked={createForm.data.working_hours[key].enabled}
-                                                            onCheckedChange={(checked) =>
-                                                                createForm.setData('working_hours', {
-                                                                    ...createForm.data.working_hours,
-                                                                    [key]: { ...createForm.data.working_hours[key], enabled: checked }
-                                                                })
-                                                            }
-                                                            className="ml-2"
-                                                        />
-                                                        {label}
-                                                    </label>
-                                                </div>
-
-                                                <div className={`grid grid-cols-2 gap-2 ${!createForm.data.working_hours[key].enabled ? 'opacity-50' : ''}`}>
-                                                    <div>
-                                                        <TextInput
-                                                            type="time"
-                                                            value={createForm.data.working_hours[key].start_time}
-                                                            onChange={(e) =>
-                                                                createForm.setData('working_hours', {
-                                                                    ...createForm.data.working_hours,
-                                                                    [key]: { ...createForm.data.working_hours[key], start_time: e.target.value }
-                                                                })
-                                                            }
-                                                            className="w-full text-xs"
-                                                            disabled={!createForm.data.working_hours[key].enabled}
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">من</p>
+                                        ].map(({ key, label }, index) => {
+                                            const schedule = createForm.data.schedules[index] || { day_of_week: key, open_time: '08:00', close_time: '18:00', is_closed: false };
+                                            return (
+                                                <div key={key} className="space-y-2 p-3 bg-white rounded-md border">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-medium text-gray-700 flex items-center">
+                                                            <Checkbox
+                                                                checked={!schedule.is_closed}
+                                                                onCheckedChange={(checked) => {
+                                                                    const newSchedules = [...createForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, is_closed: !checked };
+                                                                    createForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="ml-2"
+                                                            />
+                                                            {label}
+                                                        </label>
                                                     </div>
-                                                    <div>
-                                                        <TextInput
-                                                            type="time"
-                                                            value={createForm.data.working_hours[key].end_time}
-                                                            onChange={(e) =>
-                                                                createForm.setData('working_hours', {
-                                                                    ...createForm.data.working_hours,
-                                                                    [key]: { ...createForm.data.working_hours[key], end_time: e.target.value }
-                                                                })
-                                                            }
-                                                            className="w-full text-xs"
-                                                            disabled={!createForm.data.working_hours[key].enabled}
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">إلى</p>
-                                                    </div>
-                                                </div>
 
-                                                {createForm.errors[`working_hours.${key}.start_time`] && (
-                                                    <p className="text-xs text-red-600">
-                                                        {createForm.errors[`working_hours.${key}.start_time`]}
-                                                    </p>
-                                                )}
-                                                {createForm.errors[`working_hours.${key}.end_time`] && (
-                                                    <p className="text-xs text-red-600">
-                                                        {createForm.errors[`working_hours.${key}.end_time`]}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    <div className={`grid grid-cols-2 gap-2 ${schedule.is_closed ? 'opacity-50' : ''}`}>
+                                                        <div>
+                                                            <TextInput
+                                                                type="time"
+                                                                value={schedule.open_time}
+                                                                onChange={(e) => {
+                                                                    const newSchedules = [...createForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, open_time: e.target.value };
+                                                                    createForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="w-full text-xs"
+                                                                disabled={schedule.is_closed}
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">من</p>
+                                                        </div>
+                                                        <div>
+                                                            <TextInput
+                                                                type="time"
+                                                                value={schedule.close_time}
+                                                                onChange={(e) => {
+                                                                    const newSchedules = [...createForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, close_time: e.target.value };
+                                                                    createForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="w-full text-xs"
+                                                                disabled={schedule.is_closed}
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">إلى</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {createForm.errors[`schedules.${index}.open_time`] && (
+                                                        <p className="text-xs text-red-600">
+                                                            {createForm.errors[`schedules.${index}.open_time`]}
+                                                        </p>
+                                                    )}
+                                                    {createForm.errors[`schedules.${index}.close_time`] && (
+                                                        <p className="text-xs text-red-600">
+                                                            {createForm.errors[`schedules.${index}.close_time`]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
-                                    {createForm.errors.working_hours && (
+                                    {createForm.errors.schedules && (
                                         <p className="text-sm text-red-600 flex items-center">
-                                            <span className="ml-1">⚠️</span> {createForm.errors.working_hours}
+                                            <span className="ml-1">⚠️</span> {createForm.errors.schedules}
                                         </p>
                                     )}
                                 </div>
@@ -997,11 +948,11 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                     </div>
                                 </div>
 
-                                {/* قسم أيام وساعات العمل */}
+                                {/* قسم جدول أوقات العمل */}
                                 <div className="lg:col-span-2 space-y-4">
                                     <label className="block text-sm font-semibold text-gray-700 flex items-center">
                                         <Clock className="h-4 w-4 ml-2" />
-                                        أيام وساعات العمل *
+                                        جدول أوقات العمل *
                                     </label>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg border">
@@ -1013,74 +964,74 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                             { key: 'wednesday', label: 'الأربعاء' },
                                             { key: 'thursday', label: 'الخميس' },
                                             { key: 'friday', label: 'الجمعة' },
-                                        ].map(({ key, label }) => (
-                                            <div key={key} className="space-y-2 p-3 bg-white rounded-md border">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-sm font-medium text-gray-700 flex items-center">
-                                                        <Checkbox
-                                                            checked={editForm.data.working_hours[key].enabled}
-                                                            onCheckedChange={(checked) =>
-                                                                editForm.setData('working_hours', {
-                                                                    ...editForm.data.working_hours,
-                                                                    [key]: { ...editForm.data.working_hours[key], enabled: checked }
-                                                                })
-                                                            }
-                                                            className="ml-2"
-                                                        />
-                                                        {label}
-                                                    </label>
-                                                </div>
-
-                                                <div className={`grid grid-cols-2 gap-2 ${!editForm.data.working_hours[key].enabled ? 'opacity-50' : ''}`}>
-                                                    <div>
-                                                        <TextInput
-                                                            type="time"
-                                                            value={editForm.data.working_hours[key].start_time}
-                                                            onChange={(e) =>
-                                                                editForm.setData('working_hours', {
-                                                                    ...editForm.data.working_hours,
-                                                                    [key]: { ...editForm.data.working_hours[key], start_time: e.target.value }
-                                                                })
-                                                            }
-                                                            className="w-full text-xs"
-                                                            disabled={!editForm.data.working_hours[key].enabled}
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">من</p>
+                                        ].map(({ key, label }, index) => {
+                                            const schedule = editForm.data.schedules[index] || { day_of_week: key, open_time: '08:00', close_time: '18:00', is_closed: false };
+                                            return (
+                                                <div key={key} className="space-y-2 p-3 bg-white rounded-md border">
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-medium text-gray-700 flex items-center">
+                                                            <Checkbox
+                                                                checked={!schedule.is_closed}
+                                                                onCheckedChange={(checked) => {
+                                                                    const newSchedules = [...editForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, is_closed: !checked };
+                                                                    editForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="ml-2"
+                                                            />
+                                                            {label}
+                                                        </label>
                                                     </div>
-                                                    <div>
-                                                        <TextInput
-                                                            type="time"
-                                                            value={editForm.data.working_hours[key].end_time}
-                                                            onChange={(e) =>
-                                                                editForm.setData('working_hours', {
-                                                                    ...editForm.data.working_hours,
-                                                                    [key]: { ...editForm.data.working_hours[key], end_time: e.target.value }
-                                                                })
-                                                            }
-                                                            className="w-full text-xs"
-                                                            disabled={!editForm.data.working_hours[key].enabled}
-                                                        />
-                                                        <p className="text-xs text-gray-500 mt-1">إلى</p>
-                                                    </div>
-                                                </div>
 
-                                                {editForm.errors[`working_hours.${key}.start_time`] && (
-                                                    <p className="text-xs text-red-600">
-                                                        {editForm.errors[`working_hours.${key}.start_time`]}
-                                                    </p>
-                                                )}
-                                                {editForm.errors[`working_hours.${key}.end_time`] && (
-                                                    <p className="text-xs text-red-600">
-                                                        {editForm.errors[`working_hours.${key}.end_time`]}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    <div className={`grid grid-cols-2 gap-2 ${schedule.is_closed ? 'opacity-50' : ''}`}>
+                                                        <div>
+                                                            <TextInput
+                                                                type="time"
+                                                                value={schedule.open_time}
+                                                                onChange={(e) => {
+                                                                    const newSchedules = [...editForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, open_time: e.target.value };
+                                                                    editForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="w-full text-xs"
+                                                                disabled={schedule.is_closed}
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">من</p>
+                                                        </div>
+                                                        <div>
+                                                            <TextInput
+                                                                type="time"
+                                                                value={schedule.close_time}
+                                                                onChange={(e) => {
+                                                                    const newSchedules = [...editForm.data.schedules];
+                                                                    newSchedules[index] = { ...schedule, close_time: e.target.value };
+                                                                    editForm.setData('schedules', newSchedules);
+                                                                }}
+                                                                className="w-full text-xs"
+                                                                disabled={schedule.is_closed}
+                                                            />
+                                                            <p className="text-xs text-gray-500 mt-1">إلى</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {editForm.errors[`schedules.${index}.open_time`] && (
+                                                        <p className="text-xs text-red-600">
+                                                            {editForm.errors[`schedules.${index}.open_time`]}
+                                                        </p>
+                                                    )}
+                                                    {editForm.errors[`schedules.${index}.close_time`] && (
+                                                        <p className="text-xs text-red-600">
+                                                            {editForm.errors[`schedules.${index}.close_time`]}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
-                                    {editForm.errors.working_hours && (
+                                    {editForm.errors.schedules && (
                                         <p className="text-sm text-red-600 flex items-center">
-                                            <span className="ml-1">⚠️</span> {editForm.errors.working_hours}
+                                            <span className="ml-1">⚠️</span> {editForm.errors.schedules}
                                         </p>
                                     )}
                                 </div>
@@ -1237,26 +1188,40 @@ export default function ClinicsIndex({ clinics, stats, can, auth }) {
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div>
+                                        <div className="col-span-2">
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">أوقات العمل</label>
-                                            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                                                <div className="flex justify-between">
-                                                    <span className="text-sm text-gray-600">أيام الدوام:</span>
-                                                    <span className="text-sm font-medium">
-                                                        {selectedClinic.working_days && Array.isArray(selectedClinic.working_days) && selectedClinic.working_days.length > 0
-                                                            ? getWorkingDaysText(selectedClinic.working_days)
-                                                            : 'غير محدد'
-                                                        }
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-sm text-gray-600">من الساعة:</span>
-                                                    <span className="text-sm font-medium">{selectedClinic.start_time || 'غير محدد'}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-sm text-gray-600">إلى الساعة:</span>
-                                                    <span className="text-sm font-medium">{selectedClinic.end_time || 'غير محدد'}</span>
-                                                </div>
+                                            <div className="bg-gray-50 rounded-lg p-4">
+                                                {selectedClinic.schedules && Array.isArray(selectedClinic.schedules) && selectedClinic.schedules.length > 0 ? (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {selectedClinic.schedules.map((schedule, index) => {
+                                                            const dayNames = {
+                                                                'monday': 'الإثنين',
+                                                                'tuesday': 'الثلاثاء',
+                                                                'wednesday': 'الأربعاء',
+                                                                'thursday': 'الخميس',
+                                                                'friday': 'الجمعة',
+                                                                'saturday': 'السبت',
+                                                                'sunday': 'الأحد'
+                                                            };
+                                                            return (
+                                                                <div key={index} className={`p-3 rounded-md border ${schedule.is_closed ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+                                                                    <div className="text-sm font-medium text-gray-900 mb-1">
+                                                                        {dayNames[schedule.day_of_week] || schedule.day_of_week}
+                                                                    </div>
+                                                                    {schedule.is_closed ? (
+                                                                        <div className="text-xs text-red-600 font-medium">عطلة</div>
+                                                                    ) : (
+                                                                        <div className="text-xs text-gray-600">
+                                                                            {schedule.open_time} - {schedule.close_time}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-sm text-gray-500 text-center py-4">لا توجد أوقات عمل محددة</div>
+                                                )}
                                             </div>
                                         </div>
 
