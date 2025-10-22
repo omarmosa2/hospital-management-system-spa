@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, usePage, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
@@ -268,24 +268,26 @@ export default function DoctorDashboard() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <Link href={route('doctor.patients.index')}>
                             <Button className="flex flex-col items-center p-4 h-auto">
                                 <Users className="h-6 w-6 mb-2" />
-                                <span className="text-xs">View Patients</span>
+                                <span className="text-xs">مرضاي</span>
                             </Button>
-                            <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
-                                <Calendar className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Schedule</span>
-                            </Button>
-                            <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
-                                <FileText className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Records</span>
-                            </Button>
-                            <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
-                                <Pill className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Prescriptions</span>
-                            </Button>
-                        </div>
+                        </Link>
+                        <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
+                            <Calendar className="h-6 w-6 mb-2" />
+                            <span className="text-xs">المواعيد</span>
+                        </Button>
+                        <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
+                            <FileText className="h-6 w-6 mb-2" />
+                            <span className="text-xs">السجلات</span>
+                        </Button>
+                        <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
+                            <Pill className="h-6 w-6 mb-2" />
+                            <span className="text-xs">الوصفات</span>
+                        </Button>
+                    </div>
                     </CardContent>
                 </Card>
             </div>

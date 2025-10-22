@@ -12,39 +12,39 @@ class Patient extends Model
     protected $fillable = [
         'user_id',
         'patient_id',
-        'first_name',
-        'last_name',
-        'middle_name',
+        'full_name', // الاسم الثلاثي
         'date_of_birth',
+        'age', // العمر (calculated)
         'gender',
-        'phone',
-        'emergency_contact',
-        'emergency_phone',
-        'address',
-        'blood_type',
-        'height_cm',
-        'weight_kg',
-        'allergies',
-        'medical_conditions',
-        'current_medications',
-        'insurance_provider',
-        'insurance_number',
-        'policy_holder',
-        'primary_doctor_id',
-        'preferred_clinic_id',
+        'address', // مكان الإقامة
+        'phone', // رقم التواصل
+        'email',
+        'identity_number', // رقم الإضبارة
+        'notes', // ملاحظات إضافية
+        'created_by', // Staff who created
+        'created_at_staff', // Timestamp when staff created
         'is_active',
-        'first_visit_date',
-        'last_visit_date',
+    ];
+
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'user_id',
+        'created_by',
+        'notes', // Hide sensitive notes from unauthorized users
     ];
 
     protected function casts(): array
     {
         return [
             'date_of_birth' => 'date',
-            'height_cm' => 'decimal:2',
-            'weight_kg' => 'decimal:2',
+            'age' => 'integer',
             'is_active' => 'boolean',
-            'first_visit_date' => 'datetime',
+            'created_at_staff' => 'datetime',
             'last_visit_date' => 'datetime',
         ];
     }
@@ -58,19 +58,11 @@ class Patient extends Model
     }
 
     /**
-     * Get the primary doctor for this patient.
+     * Get the staff member who created this patient record.
      */
-    public function primaryDoctor()
+    public function createdBy()
     {
-        return $this->belongsTo(Doctor::class, 'primary_doctor_id');
-    }
-
-    /**
-     * Get the preferred clinic for this patient.
-     */
-    public function preferredClinic()
-    {
-        return $this->belongsTo(Clinic::class, 'preferred_clinic_id');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
@@ -94,7 +86,7 @@ class Patient extends Model
      */
     public function prescriptions()
     {
-        return $this->hasMany(Prescription::class);
+        return $this->hasMany(\App\Models\Prescription::class);
     }
 
     /**
@@ -102,24 +94,51 @@ class Patient extends Model
      */
     public function bills()
     {
-        return $this->hasMany(Bill::class);
+        return $this->hasMany(\App\Models\Bill::class);
     }
 
     /**
-     * Get the patient's full name.
-     */
-    public function getFullNameAttribute()
-    {
-        $middle = $this->middle_name ? ' ' . $this->middle_name . ' ' : ' ';
-        return $this->first_name . $middle . $this->last_name;
-    }
-
-    /**
-     * Get the patient's age.
+     * Get the patient's age from date of birth.
      */
     public function getAgeAttribute()
     {
         return $this->date_of_birth ? $this->date_of_birth->age : null;
+    }
+
+    /**
+     * Generate a unique patient ID.
+     */
+    public static function generatePatientId()
+    {
+        do {
+            $id = 'PAT-' . str_pad(mt_rand(0, 9999999), 7, '0', STR_PAD_LEFT);
+        } while (self::where('patient_id', $id)->exists());
+
+        return $id;
+    }
+
+    /**
+     * Check if identity number already exists.
+     */
+    public static function identityNumberExists($identityNumber, $excludeId = null)
+    {
+        $query = self::where('identity_number', $identityNumber);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        return $query->exists();
+    }
+
+    /**
+     * Check if phone number already exists.
+     */
+    public static function phoneNumberExists($phone, $excludeId = null)
+    {
+        $query = self::where('phone', $phone);
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+        return $query->exists();
     }
 
     /**
@@ -169,12 +188,46 @@ class Patient extends Model
     {
         return [
             'total_appointments' => $this->appointments()->count(),
-            'total_medical_records' => $this->medical_records()->count(),
+            'total_medical_records' => $this->medicalRecords()->count(),
             'total_prescriptions' => $this->prescriptions()->count(),
             'last_visit' => $this->last_visit_date,
             'blood_type' => $this->blood_type,
             'allergies' => $this->allergies,
             'current_medications' => $this->current_medications,
+            'medical_conditions' => $this->medical_conditions,
         ];
+    }
+
+    /**
+     * Scope for patients assigned to a specific doctor via appointments.
+     */
+    public function scopeAssignedToDoctor($query, $doctorId)
+    {
+        return $query->whereHas('appointments', function ($q) use ($doctorId) {
+            $q->where('doctor_id', $doctorId);
+        });
+    }
+
+    /**
+     * Get patients for a specific doctor.
+     */
+    public static function getPatientsForDoctor($doctorId)
+    {
+        return self::assignedToDoctor($doctorId)
+            ->with(['user', 'appointments' => function ($query) use ($doctorId) {
+                $query->where('doctor_id', $doctorId)
+                      ->with(['clinic', 'medicalRecords'])
+                      ->latest();
+            }])
+            ->active()
+            ->get();
+    }
+
+    /**
+     * Scope for active patients.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

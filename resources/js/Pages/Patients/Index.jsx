@@ -1,68 +1,84 @@
 import React, { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/Components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import {
-    Users, Search, Plus, Filter, MoreHorizontal,
-    Phone, Mail, Calendar, MapPin, Eye, DollarSign,
-    TrendingUp, Activity
+    Users, Search, Plus, Filter, MoreHorizontal, ChevronDown, ChevronUp,
+    Phone, Mail, Calendar, MapPin, Eye, Edit, Trash2, ArrowUpDown,
+    CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-export default function PatientsIndex({ patients, auth }) {
-    const [searchTerm, setSearchTerm] = useState('');
+export default function PatientsIndex({ patients, auth, canCreate, canEdit, canDelete, userRole, filters }) {
+    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters?.status || 'all');
+    const [sortBy, setSortBy] = useState('created_at');
+    const [sortDirection, setSortDirection] = useState('desc');
 
     // Ensure patients is always an array
     const patientsArray = Array.isArray(patients) ? patients : (patients?.data ? patients.data : []);
 
-    const filteredPatients = patientsArray.filter(patient =>
-        patient.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        patient.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        patient.patient_id?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredPatients = patientsArray.filter(patient => {
+        const matchesSearch = !searchTerm ||
+            patient.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            patient.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            patient.patient_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            patient.identity_number?.includes(searchTerm);
 
-    // Role-based permissions
-    const userRole = auth.user.role;
-    const canCreatePatients = userRole === 'reception';
-    const canEditPatients = userRole === 'reception';
-    const canDeletePatients = userRole === 'reception';
-    const isReadOnly = userRole === 'admin';
-    const showPageForDoctor = userRole !== 'doctor';
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'active' && patient.is_active) ||
+            (statusFilter === 'inactive' && !patient.is_active);
 
-    // If doctor tries to access this page, show access denied
-    if (!showPageForDoctor) {
-        return (
-            <AuthenticatedLayout
-                header={
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                                Access Denied
-                            </h2>
-                            <p className="text-sm text-gray-600 mt-1">
-                                You don't have permission to access this page
-                            </p>
-                        </div>
-                    </div>
-                }
-            >
-                <Head title="Access Denied" />
-                <Card>
-                    <CardContent className="text-center py-12">
-                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            Access Restricted
-                        </h3>
-                        <p className="text-gray-500">
-                            Doctors do not have access to patient management pages.
-                        </p>
-                    </CardContent>
-                </Card>
-            </AuthenticatedLayout>
-        );
-    }
+        return matchesSearch && matchesStatus;
+    });
+
+    const sortedPatients = [...filteredPatients].sort((a, b) => {
+        let aValue = a[sortBy];
+        let bValue = b[sortBy];
+
+        if (sortBy === 'age') {
+            aValue = a.date_of_birth ? new Date(a.date_of_birth).getTime() : 0;
+            bValue = b.date_of_birth ? new Date(b.date_of_birth).getTime() : 0;
+        }
+
+        if (sortDirection === 'asc') {
+            return aValue > bValue ? 1 : -1;
+        } else {
+            return aValue < bValue ? 1 : -1;
+        }
+    });
+
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+        if (searchTerm) params.set('search', searchTerm);
+        if (statusFilter !== 'all') params.set('status', statusFilter);
+
+        router.visit(`/patients?${params.toString()}`, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleSort = (column) => {
+        const newDirection = sortBy === column && sortDirection === 'asc' ? 'desc' : 'asc';
+        setSortBy(column);
+        setSortDirection(newDirection);
+    };
+
+    const getSortIcon = (column) => {
+        if (sortBy !== column) return <ArrowUpDown className="h-4 w-4" />;
+        return sortDirection === 'asc' ?
+            <ChevronUp className="h-4 w-4" /> :
+            <ChevronDown className="h-4 w-4" />;
+    };
+
+    // Role-based permissions passed from controller
+
 
     return (
         <AuthenticatedLayout
@@ -70,17 +86,19 @@ export default function PatientsIndex({ patients, auth }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                            Patients Management
+                            إدارة المرضى
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
-                            {isReadOnly ? 'View patient records and information (Admin Access)' : 'Manage patient records and information'}
+                            إدارة سجلات المرضى والمعلومات
                         </p>
                     </div>
-                    {auth.user.role === 'reception' && (
-                        <Button className="bg-blue-600 hover:bg-blue-700">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add New Patient
-                        </Button>
+                    {canCreate && (
+                        <Link href={route('patients.create')}>
+                            <Button className="bg-blue-600 hover:bg-blue-700">
+                                <Plus className="mr-2 h-4 w-4" />
+                                إضافة مريض جديد
+                            </Button>
+                        </Link>
                     )}
                 </div>
             }
@@ -95,235 +113,156 @@ export default function PatientsIndex({ patients, auth }) {
                             <div>
                                 <CardTitle className="flex items-center">
                                     <Users className="mr-2 h-5 w-5 text-blue-600" />
-                                    All Patients
+                                    جميع المرضى
                                 </CardTitle>
                                 <CardDescription>
-                                    {filteredPatients.length} patients found {isReadOnly && '- Admin can only view patient records'}
+                                    تم العثور على {sortedPatients.length} مريض
                                 </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
                             <div className="relative flex-1 max-w-sm">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input
-                                    placeholder="Search patients..."
+                                    placeholder="البحث في المرضى..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                                     className="pl-10"
                                 />
                             </div>
-                            <Button variant="outline">
+
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-40">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">جميع المرضى</SelectItem>
+                                    <SelectItem value="active">النشطين</SelectItem>
+                                    <SelectItem value="inactive">غير النشطين</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            <Button onClick={handleSearch} variant="outline">
                                 <Filter className="mr-2 h-4 w-4" />
-                                Filters
+                                تصفية
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Patients Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredPatients.map((patient) => (
-                        <Card key={patient.id} className="hover:shadow-lg transition-shadow duration-200">
-                            <CardHeader className="pb-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <span className="text-sm font-medium text-blue-700">
-                                                {patient.first_name?.charAt(0)}{patient.last_name?.charAt(0)}
-                                            </span>
+                {/* Patients Table/List View */}
+                <Card>
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('full_name')}>
+                                        <div className="flex items-center">
+                                            الاسم {getSortIcon('full_name')}
                                         </div>
-                                        <div>
-                                            <CardTitle className="text-base">
-                                                {patient.first_name} {patient.last_name}
-                                            </CardTitle>
-                                            <p className="text-sm text-gray-500">
-                                                {patient.patient_id}
-                                            </p>
+                                    </TableHead>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('patient_id')}>
+                                        <div className="flex items-center">
+                                            رقم المريض {getSortIcon('patient_id')}
                                         </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="flex items-center text-sm text-gray-600">
-                                    <Phone className="h-4 w-4 mr-2" />
-                                    {patient.phone}
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    {patient.email || 'No email provided'}
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    تاريخ الميلاد: {new Date(patient.date_of_birth).toLocaleDateString('ar-SA')}
-                                </div>
-                                <div className="flex items-center text-sm text-gray-600">
-                                    <MapPin className="h-4 w-4 mr-2" />
-                                    فصيلة الدم: {patient.blood_type || 'غير محدد'}
-                                </div>
-
-                                {/* البيانات المالية والطبية */}
-                                {patient.appointments && patient.appointments.length > 0 && (
-                                    <div className="border-t pt-3 mt-3">
-                                        <div className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                            <Activity className="h-4 w-4 mr-2" />
-                                            آخر زيارة: {patient.appointments[0]?.scheduled_datetime ?
-                                                new Date(patient.appointments[0].scheduled_datetime).toLocaleDateString('ar-SA') :
-                                                'غير محدد'
-                                            }
+                                    </TableHead>
+                                    <TableHead>التواصل</TableHead>
+                                    <TableHead className="cursor-pointer select-none" onClick={() => handleSort('age')}>
+                                        <div className="flex items-center">
+                                            العمر {getSortIcon('age')}
                                         </div>
-
-                                        {patient.appointments[0] && (
-                                            <div className="space-y-2 text-xs">
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">نوع الزيارة:</span>
-                                                    <span className="font-medium">
-                                                        {patient.appointments[0].visit_type === 'consultation' ? 'معاينة' : 'مراجعة'}
+                                    </TableHead>
+                                    <TableHead>الحالة</TableHead>
+                                    <TableHead>الإجراءات</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {sortedPatients.map((patient) => (
+                                    <TableRow key={patient.id}>
+                                        <TableCell>
+                                            <div className="flex items-center space-x-3">
+                                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <span className="text-xs font-medium text-blue-700">
+                                                        {patient.full_name?.charAt(0)}
                                                     </span>
                                                 </div>
-
-                                                {patient.appointments[0].amount_received > 0 && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">المبلغ المستلم:</span>
-                                                        <span className="font-medium">
-                                                            {new Intl.NumberFormat('ar-SA', {
-                                                                style: 'currency',
-                                                                currency: 'SAR'
-                                                            }).format(patient.appointments[0].amount_received)}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {patient.appointments[0].total_doctor_fee > 0 && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">أجور الطبيب:</span>
-                                                        <span className="font-medium text-green-600">
-                                                            {new Intl.NumberFormat('ar-SA', {
-                                                                style: 'currency',
-                                                                currency: 'SAR'
-                                                            }).format(patient.appointments[0].total_doctor_fee)}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {patient.appointments[0].total_center_fee > 0 && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">أجور المركز:</span>
-                                                        <span className="font-medium text-blue-600">
-                                                            {new Intl.NumberFormat('ar-SA', {
-                                                                style: 'currency',
-                                                                currency: 'SAR'
-                                                            }).format(patient.appointments[0].total_center_fee)}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">حالة الدفع:</span>
-                                                    <span>
-                                                        {patient.appointments[0].payment_status === 'paid' && (
-                                                            <Badge className="bg-green-100 text-green-800 text-xs">مدفوع بالكامل</Badge>
-                                                        )}
-                                                        {patient.appointments[0].payment_status === 'partial' && (
-                                                            <Badge className="bg-yellow-100 text-yellow-800 text-xs">مدفوع جزئيًا</Badge>
-                                                        )}
-                                                        {patient.appointments[0].payment_status === 'unpaid' && (
-                                                            <Badge className="bg-red-100 text-red-800 text-xs">غير مدفوع</Badge>
-                                                        )}
-                                                    </span>
+                                                <div>
+                                                    <div className="font-medium">{patient.full_name}</div>
+                                                    <div className="text-sm text-gray-500">{patient.identity_number}</div>
                                                 </div>
-
-                                                {patient.appointments[0].doctor && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">الطبيب:</span>
-                                                        <span className="font-medium">
-                                                            {patient.appointments[0].doctor.user.name}
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {patient.primary_doctor && (
-                                                    <div className="mt-2">
-                                                        <div className="text-xs font-medium text-gray-600 mb-1">الطبيب الأساسي:</div>
-                                                        <div className="text-xs text-gray-800 font-medium mb-1">
-                                                            {patient.primary_doctor.user.name} - {patient.primary_doctor.specialization}
-                                                        </div>
-                                                        {patient.primary_doctor.schedules && patient.primary_doctor.schedules.length > 0 && (
-                                                            <div className="text-xs text-gray-600">
-                                                                <div className="font-medium mb-1">أيام العمل:</div>
-                                                                <div className="grid grid-cols-2 gap-1">
-                                                                    {patient.primary_doctor.schedules.map((schedule) => (
-                                                                        <div key={schedule.id} className="flex justify-between">
-                                                                            <span>{schedule.day_name_ar}:</span>
-                                                                            {schedule.is_closed ? (
-                                                                                <span className="text-red-500">مغلق</span>
-                                                                            ) : (
-                                                                                <span>{schedule.open_time} - {schedule.close_time}</span>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {patient.appointments[0].additional_procedures && (
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600">إجراءات إضافية:</span>
-                                                        <span className="font-medium">
-                                                            {patient.appointments[0].additional_procedures}
-                                                        </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-mono text-sm">{patient.patient_id}</TableCell>
+                                        <TableCell>
+                                            <div className="text-sm">
+                                                <div className="flex items-center">
+                                                    <Phone className="h-3 w-3 ml-1" />
+                                                    {patient.phone}
+                                                </div>
+                                                {patient.email && (
+                                                    <div className="flex items-center text-gray-500">
+                                                        <Mail className="h-3 w-3 ml-1" />
+                                                        {patient.email}
                                                     </div>
                                                 )}
                                             </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between pt-2 border-t">
-                                            <div className="text-xs text-gray-500">
-                                                إجمالي الزيارات: {patient.appointments.length}
+                                        </TableCell>
+                                        <TableCell>{patient.age ? `${patient.age} سنة` : 'غير محدد'}</TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                className={
+                                                    patient.is_active
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }
+                                            >
+                                                {patient.is_active ? 'نشط' : 'غير نشط'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center space-x-2">
+                                                <Link href={route('patients.show', patient.id)}>
+                                                    <Button size="sm" variant="outline">
+                                                        <Eye className="h-3 w-3" />
+                                                    </Button>
+                                                </Link>
+                                                {canEdit && (
+                                                    <Link href={route('patients.edit', patient.id)}>
+                                                        <Button size="sm" variant="outline">
+                                                            <Edit className="h-3 w-3" />
+                                                        </Button>
+                                                    </Link>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => {
+                                                            if (confirm('هل أنت متأكد من حذف هذا المريض؟')) {
+                                                                router.delete(route('patients.destroy', patient.id), {
+                                                                    onSuccess: () => toast.success('تم حذف المريض بنجاح'),
+                                                                    onError: () => toast.error('فشل في حذف المريض')
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="text-red-600 hover:text-red-700"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                )}
                                             </div>
-                                            <Button size="sm" variant="outline">
-                                                حجز موعد جديد
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
 
-                                <div className="flex items-center justify-between pt-3 border-t">
-                                    <div className="flex space-x-2">
-                                        <Badge
-                                            className={
-                                                patient.is_active
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }
-                                        >
-                                            {patient.is_active ? 'Active' : 'Inactive'}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex space-x-2">
-                                        <Button size="sm" variant="outline">
-                                            <Eye className="mr-1 h-3 w-3" />
-                                            View
-                                        </Button>
-                                        {auth.user.role === 'reception' && (
-                                            <Button size="sm">
-                                                Edit
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-
-                {filteredPatients.length === 0 && (
+                {sortedPatients.length === 0 && (
                     <Card>
                         <CardContent className="text-center py-12">
                             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -331,16 +270,15 @@ export default function PatientsIndex({ patients, auth }) {
                                 No patients found
                             </h3>
                             <p className="text-gray-500 mb-4">
-                                {searchTerm ? 'Try adjusting your search terms.' : isReadOnly ? 'No patients in the system yet.' : 'Get started by adding your first patient.'}
+                                {searchTerm ? 'جرب تعديل كلمات البحث.' : 'ابدأ بإضافة أول مريض.'}
                             </p>
-                            {!searchTerm && canCreatePatients && (
-                                <Button>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add New Patient
-                                </Button>
-                            )}
-                            {!searchTerm && isReadOnly && (
-                                <Badge variant="outline">Admin View Only</Badge>
+                            {!searchTerm && canCreate && (
+                                <Link href={route('patients.create')}>
+                                    <Button>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        إضافة مريض جديد
+                                    </Button>
+                                </Link>
                             )}
                         </CardContent>
                     </Card>

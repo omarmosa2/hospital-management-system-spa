@@ -111,7 +111,7 @@ export default function ShowPatient() {
                                     <Activity className="h-8 w-8 text-blue-600" />
                                     <div className="ml-4">
                                         <p className="text-sm font-medium text-gray-600">Status</p>
-                                        <p className="text-2xl font-bold">{getStatusBadge(patient.is_active)}</p>
+                                        <div className="text-2xl font-bold">{getStatusBadge(patient.is_active)}</div>
                                     </div>
                                 </div>
                             </CardContent>

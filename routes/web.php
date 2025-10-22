@@ -11,6 +11,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+
+
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -66,16 +68,26 @@ Route::middleware('auth')->group(function () {
 
     // Patient Management Routes
     Route::prefix('patients')->group(function () {
-        // Admin can only view, reception has full control on patients
+        // Admin and Reception can manage patients (add, edit, delete)
         Route::middleware('role:admin|receptionist')->group(function () {
             Route::get('/', [PatientController::class, 'index'])->name('patients.index');
+            Route::get('/create', [PatientController::class, 'create'])->name('patients.create');
+            Route::post('/', [PatientController::class, 'store'])->name('patients.store');
             Route::get('/{patient}', [PatientController::class, 'show'])->name('patients.show');
+            Route::get('/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+            Route::put('/{patient}', [PatientController::class, 'update'])->name('patients.update');
+            Route::delete('/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
             Route::get('/{patient}/medical-records', [PatientController::class, 'medicalRecords'])->name('patients.medical-records');
             Route::get('/{patient}/prescriptions', [PatientController::class, 'prescriptions'])->name('patients.prescriptions');
             Route::get('/{patient}/bills', [PatientController::class, 'bills'])->name('patients.bills');
-            Route::post('/', [PatientController::class, 'store'])->name('patients.store');
-            Route::put('/{patient}', [PatientController::class, 'update'])->name('patients.update');
-            Route::delete('/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
+        });
+    });
+
+    // Doctor Patient Viewing Routes - Doctors can only view their assigned patients
+    Route::prefix('my-patients')->group(function () {
+        Route::middleware('role:doctor')->group(function () {
+            Route::get('/', [App\Http\Controllers\DoctorPatientsController::class, 'index'])->name('doctor.patients.index');
+            Route::get('/{patient}', [App\Http\Controllers\DoctorPatientsController::class, 'show'])->name('doctor.patients.show');
         });
     });
 
@@ -132,6 +144,9 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::get('/salaries-stats', [SalaryController::class, 'getStats'])->name('salaries.stats');
+
+        // Patient export
+        Route::get('/patients/export', [PatientController::class, 'export'])->name('patients.export');
     });
 });
 
@@ -140,6 +155,9 @@ Route::middleware(['auth'])->prefix('api')->group(function () {
     Route::middleware('role:admin|receptionist')->group(function () {
         Route::get('/patients/stats', [PatientController::class, 'getStats'])->name('api.patients.stats');
         Route::get('/appointments/stats', [AppointmentController::class, 'getStats'])->name('api.appointments.stats');
+    });
+    Route::middleware('role:doctor')->group(function () {
+        Route::get('/doctor-patients/stats', [App\Http\Controllers\DoctorPatientsController::class, 'getStats'])->name('api.doctor.patients.stats');
     });
     Route::middleware('role:admin')->group(function () {
         Route::get('/salaries/stats', [SalaryController::class, 'getStats'])->name('api.salaries.stats');

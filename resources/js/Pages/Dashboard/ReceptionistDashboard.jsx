@@ -300,18 +300,22 @@ export default function ReceptionistDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                            <Button className="flex flex-col items-center p-4 h-auto">
-                                <UserPlus className="h-6 w-6 mb-2" />
-                                <span className="text-xs">New Patient</span>
-                            </Button>
+                            <Link href={route('patients.create')}>
+                                <Button className="flex flex-col items-center p-4 h-auto">
+                                    <UserPlus className="h-6 w-6 mb-2" />
+                                    <span className="text-xs">إضافة مريض</span>
+                                </Button>
+                            </Link>
                             <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
                                 <Calendar className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Book Appointment</span>
+                                <span className="text-xs">حجز موعد</span>
                             </Button>
-                            <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
-                                <Users className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Patient List</span>
-                            </Button>
+                            <Link href={route('patients.index')}>
+                                <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
+                                    <Users className="h-6 w-6 mb-2" />
+                                    <span className="text-xs">قائمة المرضى</span>
+                                </Button>
+                            </Link>
                             <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
                                 <Phone className="h-6 w-6 mb-2" />
                                 <span className="text-xs">Contact</span>

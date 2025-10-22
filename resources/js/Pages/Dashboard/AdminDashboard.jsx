@@ -251,10 +251,12 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                            <Button className="flex flex-col items-center p-4 h-auto">
-                                <Users className="h-6 w-6 mb-2" />
-                                <span className="text-xs">Manage Users</span>
-                            </Button>
+                            <Link href={route('patients.index')}>
+                                <Button className="flex flex-col items-center p-4 h-auto">
+                                    <Users className="h-6 w-6 mb-2" />
+                                    <span className="text-xs">إدارة المرضى</span>
+                                </Button>
+                            </Link>
                             <Button variant="outline" className="flex flex-col items-center p-4 h-auto">
                                 <Calendar className="h-6 w-6 mb-2" />
                                 <span className="text-xs">Appointments</span>
