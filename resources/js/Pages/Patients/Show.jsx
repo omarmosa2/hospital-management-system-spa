@@ -256,6 +256,37 @@ export default function ShowPatient() {
                                             </div>
                                         </div>
 
+                                        {patient.primary_doctor && (
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-600">Primary Doctor</p>
+                                                <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="font-semibold">{patient.primary_doctor.user?.name}</p>
+                                                            <p className="text-sm text-gray-600">{patient.primary_doctor.specialization}</p>
+                                                        </div>
+                                                        {patient.primary_doctor.schedules && patient.primary_doctor.schedules.length > 0 && (
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-medium text-gray-600">Schedule</p>
+                                                                <div className="mt-1 space-y-1">
+                                                                    {patient.primary_doctor.schedules.map((schedule) => (
+                                                                        <div key={schedule.id} className="text-xs text-gray-500">
+                                                                            <span className="font-medium">{schedule.day_name_ar}:</span>
+                                                                            {schedule.is_closed ? (
+                                                                                <span className="text-red-500"> Closed</span>
+                                                                            ) : (
+                                                                                <span> {schedule.open_time} - {schedule.close_time}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {patient.allergies && (
                                             <div>
                                                 <p className="text-sm font-medium text-gray-600">Allergies</p>

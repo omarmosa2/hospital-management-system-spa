@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ClinicController;
+use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Application;
@@ -51,17 +52,15 @@ Route::middleware('auth')->group(function () {
 
     // Doctor Management Routes
     Route::prefix('doctors')->group(function () {
-        // View routes - accessible by admin and reception
-        Route::middleware('role:admin|receptionist')->group(function () {
-            Route::get('/', [\App\Http\Controllers\DoctorController::class, 'index'])->name('doctors.index');
-            Route::get('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'show'])->name('doctors.show');
-        });
-
-        // Admin only routes - full control
+        // All doctor routes for admin only for now (simplified)
         Route::middleware('role:admin')->group(function () {
-            Route::post('/', [\App\Http\Controllers\DoctorController::class, 'store'])->name('doctors.store');
-            Route::put('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'update'])->name('doctors.update');
-            Route::delete('/{doctor}', [\App\Http\Controllers\DoctorController::class, 'destroy'])->name('doctors.destroy');
+            Route::get('/', [DoctorController::class, 'index'])->name('doctors.index');
+            Route::get('/create', [DoctorController::class, 'create'])->name('doctors.create');
+            Route::post('/', [DoctorController::class, 'store'])->name('doctors.store');
+            Route::get('/{doctor}', [DoctorController::class, 'show'])->name('doctors.show');
+            Route::get('/{doctor}/edit', [DoctorController::class, 'edit'])->name('doctors.edit');
+            Route::put('/{doctor}', [DoctorController::class, 'update'])->name('doctors.update');
+            Route::delete('/{doctor}', [DoctorController::class, 'destroy'])->name('doctors.destroy');
         });
     });
 

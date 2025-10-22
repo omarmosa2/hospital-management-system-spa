@@ -246,6 +246,32 @@ export default function PatientsIndex({ patients, auth }) {
                                                     </div>
                                                 )}
 
+                                                {patient.primary_doctor && (
+                                                    <div className="mt-2">
+                                                        <div className="text-xs font-medium text-gray-600 mb-1">الطبيب الأساسي:</div>
+                                                        <div className="text-xs text-gray-800 font-medium mb-1">
+                                                            {patient.primary_doctor.user.name} - {patient.primary_doctor.specialization}
+                                                        </div>
+                                                        {patient.primary_doctor.schedules && patient.primary_doctor.schedules.length > 0 && (
+                                                            <div className="text-xs text-gray-600">
+                                                                <div className="font-medium mb-1">أيام العمل:</div>
+                                                                <div className="grid grid-cols-2 gap-1">
+                                                                    {patient.primary_doctor.schedules.map((schedule) => (
+                                                                        <div key={schedule.id} className="flex justify-between">
+                                                                            <span>{schedule.day_name_ar}:</span>
+                                                                            {schedule.is_closed ? (
+                                                                                <span className="text-red-500">مغلق</span>
+                                                                            ) : (
+                                                                                <span>{schedule.open_time} - {schedule.close_time}</span>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {patient.appointments[0].additional_procedures && (
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-600">إجراءات إضافية:</span>

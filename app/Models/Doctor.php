@@ -22,6 +22,10 @@ class Doctor extends Model
         'max_patients_per_day',
         'office_phone',
         'office_room',
+        'address',
+        'consultation_discount',
+        'center_percentage',
+        'notes',
         'is_available',
         'available_days',
         'start_time',
@@ -35,6 +39,8 @@ class Doctor extends Model
             'is_available' => 'boolean',
             'consultation_fee' => 'decimal:2',
             'procedure_fee_percentage' => 'decimal:2',
+            'consultation_discount' => 'decimal:2',
+            'center_percentage' => 'decimal:2',
             'start_time' => 'datetime:H:i',
             'end_time' => 'datetime:H:i',
         ];
@@ -86,6 +92,14 @@ class Doctor extends Model
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    /**
+     * Get the schedules for this doctor.
+     */
+    public function schedules()
+    {
+        return $this->hasMany(DoctorSchedule::class);
     }
 
     /**

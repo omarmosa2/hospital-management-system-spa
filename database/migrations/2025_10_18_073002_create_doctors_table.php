@@ -25,11 +25,16 @@ return new class extends Migration
             // Experience and availability
             $table->integer('years_of_experience')->default(0);
             $table->decimal('consultation_fee', 10, 2)->default(0);
+            $table->decimal('procedure_fee_percentage', 5, 2)->default(0); // نسبة أجور الإجراءات
             $table->integer('max_patients_per_day')->default(20);
 
             // Contact and location
             $table->string('office_phone')->nullable();
             $table->string('office_room')->nullable();
+            $table->text('address')->nullable(); // العنوان
+            $table->decimal('consultation_discount', 5, 2)->default(0); // نسبة الحسم من المعاينات
+            $table->decimal('center_percentage', 5, 2)->default(100); // نسبة حسم الطبيب للمجمع
+            $table->text('notes')->nullable(); // ملاحظات
 
             // Status and scheduling
             $table->boolean('is_available')->default(true);

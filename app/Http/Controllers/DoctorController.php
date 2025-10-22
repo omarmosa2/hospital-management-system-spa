@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Doctor;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Clinic;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -19,21 +20,50 @@ class DoctorController extends Controller
     public function index()
     {
         // Check if user has permission to view doctors
-        if (!Auth::user()->hasPermission('view-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized access to doctors management.');
         }
 
-        $doctors = Doctor::with(['user', 'clinic'])
-                        ->orderBy('created_at', 'desc')
-                        ->get()
-                        ->toArray();
+        $doctors = Doctor::with(['user', 'clinic', 'patients', 'schedules'])
+                         ->orderBy('created_at', 'desc')
+                         ->get()
+                         ->map(function($doctor) {
+                             return [
+                                 'id' => $doctor->id,
+                                 'user' => $doctor->user,
+                                 'clinic' => $doctor->clinic,
+                                 'license_number' => $doctor->license_number,
+                                 'specialization' => $doctor->specialization,
+                                 'qualification' => $doctor->qualification,
+                                 'bio' => $doctor->bio,
+                                 'years_of_experience' => $doctor->years_of_experience,
+                                 'consultation_fee' => $doctor->consultation_fee,
+                                 'procedure_fee_percentage' => $doctor->procedure_fee_percentage,
+                                 'max_patients_per_day' => $doctor->max_patients_per_day,
+                                 'office_phone' => $doctor->office_phone,
+                                 'office_room' => $doctor->office_room,
+                                 'address' => $doctor->address,
+                                 'consultation_discount' => $doctor->consultation_discount,
+                                 'center_percentage' => $doctor->center_percentage,
+                                 'notes' => $doctor->notes,
+                                 'is_available' => $doctor->is_available,
+                                 'available_days' => $doctor->available_days,
+                                 'start_time' => $doctor->start_time,
+                                 'end_time' => $doctor->end_time,
+                                 'schedules' => $doctor->schedules,
+                                 'patients' => $doctor->patients,
+                                 'created_at' => $doctor->created_at,
+                                 'updated_at' => $doctor->updated_at,
+                             ];
+                         })
+                         ->toArray();
 
         return Inertia::render('Doctors/Index', [
             'doctors' => $doctors,
             'can' => [
-                'create' => Auth::user()->hasPermission('create-doctors'),
-                'edit' => Auth::user()->hasPermission('edit-doctors'),
-                'delete' => Auth::user()->hasPermission('delete-doctors'),
+                'create' => Auth::user()->hasRole('admin'),
+                'edit' => Auth::user()->hasRole('admin'),
+                'delete' => Auth::user()->hasRole('admin'),
             ],
             'auth' => [
                 'user' => Auth::user()
@@ -47,11 +77,15 @@ class DoctorController extends Controller
     public function create()
     {
         // Check if user has permission to create doctors
-        if (!Auth::user()->hasPermission('create-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized to create doctors.');
         }
 
-        return Inertia::render('Doctors/Create');
+        $clinics = Clinic::where('is_active', true)->get();
+
+        return Inertia::render('Doctors/Create', [
+            'clinics' => $clinics
+        ]);
     }
 
     /**
@@ -60,7 +94,7 @@ class DoctorController extends Controller
     public function store(Request $request)
     {
         // Check if user has permission to create doctors
-        if (!Auth::user()->hasPermission('create-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized to create doctors.');
         }
 
@@ -68,20 +102,24 @@ class DoctorController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'license_number' => 'required|string|unique:doctors,license_number',
             'specialization' => 'required|string|max:255',
             'qualification' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            'years_of_experience' => 'required|integer|min:0|max:50',
             'consultation_fee' => 'required|numeric|min:0|max:1000',
-            'max_patients_per_day' => 'required|integer|min:1|max:100',
+            'procedure_fee_percentage' => 'required|numeric|min:0|max:100',
             'office_phone' => 'nullable|string|max:20',
             'office_room' => 'nullable|string|max:50',
-            'available_days' => 'required|array|min:1',
-            'available_days.*' => 'string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'address' => 'nullable|string|max:500',
+            'consultation_discount' => 'required|numeric|min:0|max:100',
+            'center_percentage' => 'required|numeric|min:0|max:100',
+            'notes' => 'nullable|string|max:1000',
+            'is_available' => 'boolean',
             'clinic_id' => 'required|exists:clinics,id',
+            'schedules' => 'required|array|min:1',
+            'schedules.*.day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'schedules.*.open_time' => 'nullable|date_format:H:i',
+            'schedules.*.close_time' => 'nullable|date_format:H:i|after:schedules.*.open_time',
+            'schedules.*.is_closed' => 'boolean',
         ]);
 
         try {
@@ -94,26 +132,44 @@ class DoctorController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make('doctor123'), // Default password
-                'role_id' => $doctorRole ? $doctorRole->id : null,
             ]);
+
+            // Assign role to user
+            if ($doctorRole) {
+                $user->assignRole($doctorRole);
+            }
 
             // Create doctor profile
             $doctor = Doctor::create([
                 'user_id' => $user->id,
                 'clinic_id' => $validated['clinic_id'],
-                'license_number' => $validated['license_number'],
+                'license_number' => 'DOC-' . str_pad($user->id, 6, '0', STR_PAD_LEFT),
                 'specialization' => $validated['specialization'],
                 'qualification' => $validated['qualification'],
                 'bio' => $validated['bio'],
-                'years_of_experience' => $validated['years_of_experience'],
                 'consultation_fee' => $validated['consultation_fee'],
-                'max_patients_per_day' => $validated['max_patients_per_day'],
+                'procedure_fee_percentage' => $validated['procedure_fee_percentage'],
                 'office_phone' => $validated['office_phone'],
                 'office_room' => $validated['office_room'],
-                'available_days' => $validated['available_days'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
+                'address' => $validated['address'],
+                'consultation_discount' => $validated['consultation_discount'],
+                'center_percentage' => $validated['center_percentage'],
+                'notes' => $validated['notes'],
+                'is_available' => $validated['is_available'] ?? true,
             ]);
+
+            // Create doctor schedules
+            if (isset($validated['schedules']) && is_array($validated['schedules'])) {
+                foreach ($validated['schedules'] as $scheduleData) {
+                    $doctor->schedules()->create([
+                        'doctor_id' => $doctor->id,
+                        'day_of_week' => $scheduleData['day_of_week'],
+                        'open_time' => $scheduleData['is_closed'] ? null : $scheduleData['open_time'],
+                        'close_time' => $scheduleData['is_closed'] ? null : $scheduleData['close_time'],
+                        'is_closed' => $scheduleData['is_closed'] ?? false,
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -134,7 +190,7 @@ class DoctorController extends Controller
     public function show(Doctor $doctor)
     {
         // Check if user has permission to view doctors
-        if (!Auth::user()->hasPermission('view-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized access to doctor details.');
         }
 
@@ -143,8 +199,8 @@ class DoctorController extends Controller
         return Inertia::render('Doctors/Show', [
             'doctor' => $doctor,
             'can' => [
-                'edit' => Auth::user()->hasPermission('edit-doctors'),
-                'delete' => Auth::user()->hasPermission('delete-doctors'),
+                'edit' => Auth::user()->hasRole('admin'),
+                'delete' => Auth::user()->hasRole('admin'),
             ]
         ]);
     }
@@ -155,12 +211,15 @@ class DoctorController extends Controller
     public function edit(Doctor $doctor)
     {
         // Check if user has permission to edit doctors
-        if (!Auth::user()->hasPermission('edit-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized to edit doctors.');
         }
 
+        $clinics = Clinic::where('is_active', true)->get();
+
         return Inertia::render('Doctors/Edit', [
-            'doctor' => $doctor->load(['user', 'clinic'])
+            'doctor' => $doctor->load(['user', 'clinic', 'schedules']),
+            'clinics' => $clinics
         ]);
     }
 
@@ -170,7 +229,7 @@ class DoctorController extends Controller
     public function update(Request $request, Doctor $doctor)
     {
         // Check if user has permission to edit doctors
-        if (!Auth::user()->hasPermission('edit-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized to edit doctors.');
         }
 
@@ -178,20 +237,24 @@ class DoctorController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $doctor->user_id,
             'phone' => 'required|string|max:20',
-            'license_number' => 'required|string|unique:doctors,license_number,' . $doctor->id,
             'specialization' => 'required|string|max:255',
             'qualification' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            'years_of_experience' => 'required|integer|min:0|max:50',
             'consultation_fee' => 'required|numeric|min:0|max:1000',
-            'max_patients_per_day' => 'required|integer|min:1|max:100',
+            'procedure_fee_percentage' => 'required|numeric|min:0|max:100',
             'office_phone' => 'nullable|string|max:20',
             'office_room' => 'nullable|string|max:50',
-            'available_days' => 'required|array|min:1',
-            'available_days.*' => 'string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'address' => 'nullable|string|max:500',
+            'consultation_discount' => 'required|numeric|min:0|max:100',
+            'center_percentage' => 'required|numeric|min:0|max:100',
+            'notes' => 'nullable|string|max:1000',
+            'is_available' => 'boolean',
             'clinic_id' => 'required|exists:clinics,id',
+            'schedules' => 'required|array|min:1',
+            'schedules.*.day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'schedules.*.open_time' => 'nullable|date_format:H:i',
+            'schedules.*.close_time' => 'nullable|date_format:H:i|after:schedules.*.open_time',
+            'schedules.*.is_closed' => 'boolean',
         ]);
 
         try {
@@ -206,19 +269,34 @@ class DoctorController extends Controller
             // Update doctor profile
             $doctor->update([
                 'clinic_id' => $validated['clinic_id'],
-                'license_number' => $validated['license_number'],
                 'specialization' => $validated['specialization'],
                 'qualification' => $validated['qualification'],
                 'bio' => $validated['bio'],
-                'years_of_experience' => $validated['years_of_experience'],
                 'consultation_fee' => $validated['consultation_fee'],
-                'max_patients_per_day' => $validated['max_patients_per_day'],
+                'procedure_fee_percentage' => $validated['procedure_fee_percentage'],
                 'office_phone' => $validated['office_phone'],
                 'office_room' => $validated['office_room'],
-                'available_days' => $validated['available_days'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
+                'address' => $validated['address'],
+                'consultation_discount' => $validated['consultation_discount'],
+                'center_percentage' => $validated['center_percentage'],
+                'notes' => $validated['notes'],
+                'is_available' => $validated['is_available'] ?? true,
             ]);
+
+            // Update doctor schedules
+            $doctor->schedules()->delete(); // Delete existing schedules
+
+            if (isset($validated['schedules']) && is_array($validated['schedules'])) {
+                foreach ($validated['schedules'] as $scheduleData) {
+                    $doctor->schedules()->create([
+                        'doctor_id' => $doctor->id,
+                        'day_of_week' => $scheduleData['day_of_week'],
+                        'open_time' => $scheduleData['is_closed'] ? null : ($scheduleData['open_time'] ?: null),
+                        'close_time' => $scheduleData['is_closed'] ? null : ($scheduleData['close_time'] ?: null),
+                        'is_closed' => $scheduleData['is_closed'] ?? false,
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -239,7 +317,7 @@ class DoctorController extends Controller
     public function destroy(Doctor $doctor)
     {
         // Check if user has permission to delete doctors
-        if (!Auth::user()->hasPermission('delete-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized to delete doctors.');
         }
 
@@ -280,7 +358,7 @@ class DoctorController extends Controller
      */
     public function getStats()
     {
-        if (!Auth::user()->hasPermission('view-doctors')) {
+        if (!Auth::user()->hasRole('admin')) {
             abort(403);
         }
 

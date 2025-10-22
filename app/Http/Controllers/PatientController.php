@@ -17,7 +17,7 @@ class PatientController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Patient::with(['user', 'primaryDoctor.user', 'preferredClinic'])
+        $query = Patient::with(['user', 'primaryDoctor.user', 'primaryDoctor.schedules', 'preferredClinic'])
             ->when($request->search, function ($q) use ($request) {
                 $q->where('first_name', 'like', '%' . $request->search . '%')
                   ->orWhere('last_name', 'like', '%' . $request->search . '%')
@@ -131,6 +131,7 @@ class PatientController extends Controller
         $patient->load([
             'user',
             'primaryDoctor.user',
+            'primaryDoctor.schedules',
             'preferredClinic',
             'appointments' => function ($query) {
                 $query->latest()->limit(10);
